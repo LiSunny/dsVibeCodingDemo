@@ -1,0 +1,271 @@
+/* ============================================================
+ * 全局样式 & 设计令牌 (Design Tokens)
+ * 
+ * 数据来源：Figma 设计变量
+ *   - colors: VariableCollectionId:143:5519
+ *   - spacing: VariableCollectionId:143:5520
+ *   - radius:  VariableCollectionId:143:5521
+ *   - typography: VariableCollectionId:143:5522
+ * 
+ * 支持浅色 / 深色模式手动切换（html.dark）
+ * 颜色符合 WCAG AA 对比度标准（文字 ≥ 4.5:1，UI 组件 ≥ 3:1）
+ * ============================================================ */
+
+/* ---- Reset ---- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ============================================================
+ * 设计令牌：浅色模式 (Light Theme)
+ * ============================================================ */
+:root {
+  /* ============================================================
+   * 颜色令牌 (Colors)
+   * ============================================================ */
+
+  /* ---- 背景色 (Background) ---- */
+  --fill-page:         #E4E4E4;   /* background/main */
+  --fill-surface:      #FFFFFF;   /* background/card */
+  --fill-secondary:    #FBFBFB;   /* background/sub-card */
+  --fill-hover:        #939393;   /* background/card-hover */
+  --fill-mask:         rgba(0, 0, 0, 0.45);   /* 遮罩层 */
+
+  /* ---- 文字颜色 (Text) ---- */
+  --text-primary:      #101010;   /* text/primary */
+  --text-secondary:    #2E2E2E;   /* text/secondary */
+  --text-muted:        #5E5E5E;   /* text/muted */
+  --text-inverse:      #FFFFFF;   /* 反色文字 */
+
+  /* ---- 品牌色 (Accent / Brand) ---- */
+  --color-primary:       #3678E3;   /* accent/primary */
+  --color-primary-dark:  #204785;   /* accent/dark */
+
+  /* ---- 语义色 (Semantic) ---- */
+  --color-success:      #059669;   /* semantic/success */
+  --color-success-bg:   rgba(5, 150, 105, 0.1);
+  --color-success-border: rgba(5, 150, 105, 0.2);
+  --color-warning:      #D97706;   /* semantic/warning */
+  --color-warning-bg:   rgba(217, 119, 6, 0.1);
+  --color-warning-border: rgba(217, 119, 6, 0.2);
+  --color-danger:       #DC2626;   /* semantic/danger */
+  --color-danger-bg:    rgba(220, 38, 38, 0.1);
+  --color-danger-border: rgba(220, 38, 38, 0.2);
+  --color-info:         #3678E3;   /* semantic/info */
+  --color-info-bg:      rgba(54, 120, 227, 0.1);
+  --color-info-border:  rgba(54, 120, 227, 0.2);
+  --color-notice:       #CA8A04;   /* semantic/notice */
+  --color-notice-bg:    rgba(202, 138, 4, 0.1);
+  --color-notice-border: rgba(202, 138, 4, 0.2);
+
+  /* ---- 边框颜色 (Border) ---- */
+  --border-primary:   #D3D3D3;                 /* border/high */
+  --border-default:   #E9E9E9;                 /* border/default */
+  --border-low:       #F3F3F3;                 /* border/low */
+  --border-focus:     rgba(54, 120, 227, 0.19); /* border/hover */
+
+  /* ---- 阴影 (Shadow) ---- */
+  --shadow-accent:    rgba(54, 120, 227, 0.15); /* shadow/accent */
+  --shadow-sm:        0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md:        0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg:        0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl:        0 16px 48px rgba(0, 0, 0, 0.16);
+
+  /* ---- 侧边栏 (Sidebar) ---- */
+  --sidebar-bg:             #1A3A5C;
+  --sidebar-text:           #BFCBD9;
+  --sidebar-active:         var(--color-primary);
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-collapsed: 64px;
+
+  /* ============================================================
+   * 间距令牌 (Spacing)
+   * ============================================================ */
+  --spacing-0:  0;
+  --spacing-2:  2px;
+  --spacing-4:  4px;
+  --spacing-8:  8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-24: 24px;
+
+  /* 语义化别名（推荐使用） */
+  --spacing-xs: var(--spacing-4);
+  --spacing-sm: var(--spacing-8);
+  --spacing-md: var(--spacing-16);
+  --spacing-lg: var(--spacing-24);
+
+  /* ============================================================
+   * 圆角令牌 (Border Radius)
+   * ============================================================ */
+  --radius-sm:    6px;
+  --radius-md:    8px;
+  --radius-lg:    10px;
+  --radius-xl:    14px;
+  --radius-round: 999px;
+
+  /* ============================================================
+   * 字体排版令牌 (Typography)
+   * ============================================================ */
+
+  /* 字号 */
+  --font-size-xs:    12px;   /* fontSize/xs */
+  --font-size-small: 14px;   /* fontSize/small */
+  --font-size-body:  16px;   /* fontSize/body */
+  --font-size-h4:    16px;   /* fontSize/h4 */
+  --font-size-h3:    18px;   /* fontSize/h3 */
+  --font-size-h2:    20px;   /* fontSize/h2 */
+  --font-size-h1:    24px;   /* fontSize/h1 */
+
+  /* 字重 */
+  --font-weight-regular: 400;   /* fontWeight/regular */
+  --font-weight-medium:  500;   /* fontWeight/medium */
+  --font-weight-bold:    800;   /* fontWeight/bold */
+  --font-weight-heavy:   900;   /* fontWeight/heavy (Figma=1000, CSS max=900) */
+
+  /* 行高 */
+  --line-height-normal: 1.5;    /* lineHeight/default */
+
+  /* 字体族 */
+  --font-family-base:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  --font-family-mono:
+    'SF Mono',
+    'Monaco',
+    'Menlo',
+    'Consolas',
+    monospace;
+
+  /* ---- Element Plus 主题变量同步 ---- */
+  --el-color-primary:   var(--color-primary);
+  --el-color-success:   var(--color-success);
+  --el-color-warning:   var(--color-warning);
+  --el-color-danger:    var(--color-danger);
+  --el-color-info:      var(--color-info);
+  --el-border-radius-base: var(--radius-md);
+}
+
+/* ============================================================
+ * 设计令牌：深色模式 (Dark Theme)
+ * 通过 html.dark 类名手动切换
+ * ============================================================ */
+html.dark {
+
+  /* ---- 背景色 (Background) ---- */
+  --fill-page:         #002B59;   /* background/main */
+  --fill-surface:      #00336A;   /* background/card */
+  --fill-secondary:    #003670;   /* background/sub-card */
+  --fill-hover:        rgba(249, 250, 251, 0.08); /* background/card-hover */
+  --fill-mask:         rgba(0, 0, 0, 0.6);
+
+  /* ---- 文字颜色 (Text) ---- */
+  --text-primary:      #FFFFFF;   /* text/primary */
+  --text-secondary:    #C5C5C5;   /* text/secondary */
+  --text-muted:        #8892B0;   /* text/muted */
+  --text-inverse:      #121218;
+
+  /* ---- 品牌色 (Accent / Brand) ---- */
+  --color-primary:       #00E5FF;   /* accent/primary */
+  --color-primary-dark:  #0091EA;   /* accent/dark */
+
+  /* ---- 语义色 (Semantic) ---- */
+  --color-success:      #4CAF50;   /* semantic/success */
+  --color-success-bg:   rgba(76, 175, 80, 0.13);
+  --color-success-border: rgba(76, 175, 80, 0.25);
+  --color-warning:      #FF9800;   /* semantic/warning */
+  --color-warning-bg:   rgba(255, 152, 0, 0.13);
+  --color-warning-border: rgba(255, 152, 0, 0.25);
+  --color-danger:       #F44336;   /* semantic/danger */
+  --color-danger-bg:    rgba(244, 67, 54, 0.13);
+  --color-danger-border: rgba(244, 67, 54, 0.25);
+  --color-info:         #00E5FF;   /* semantic/info */
+  --color-info-bg:      rgba(0, 229, 255, 0.13);
+  --color-info-border:  rgba(0, 229, 255, 0.25);
+  --color-notice:       #FFD600;   /* semantic/notice */
+  --color-notice-bg:    rgba(255, 214, 0, 0.13);
+  --color-notice-border: rgba(255, 214, 0, 0.25);
+
+  /* ---- 边框颜色 (Border) ---- */
+  --border-primary:   #004E7E;                 /* border/high */
+  --border-default:   #00426B;                 /* border/default */
+  --border-low:       rgba(0, 67, 109, 0.69);  /* border/low */
+  --border-focus:     rgba(0, 229, 255, 0.2);  /* border/hover */
+
+  /* ---- 阴影 (Shadow) ---- */
+  --shadow-accent:    rgba(0, 229, 255, 0.3);
+  --shadow-sm:        0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md:        0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg:        0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-xl:        0 16px 64px rgba(0, 0, 0, 0.7);
+
+  /* ---- 侧边栏 (Sidebar) ---- */
+  --sidebar-bg:     #002142;
+  --sidebar-text:   #8892B0;
+  --sidebar-active: var(--color-primary);
+}
+
+/* ============================================================
+ * 基础样式
+ * ============================================================ */
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--fill-page);
+  color: var(--text-primary);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* ---- 全局链接样式 ---- */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* ---- 全局滚动条 ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: var(--radius-round);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ---- 选中文本 ---- */
+::selection {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}

@@ -1,0 +1,94 @@
+# ============================================================
+# .clinerule — 工程标准约束规则文件
+# ============================================================
+# 本文件定义不同工作场景下应遵循的规范文件。
+# 所有开发人员（含 AI 辅助工具）在进行对应操作时，
+# 必须参考指定的 rules/ 目录下的规范文档。
+# ============================================================
+
+[general]
+# 规范文件目录
+rules_dir = rules/
+
+# ============================================================
+# 场景 → 规范文件映射
+# ============================================================
+
+[scenario:write_code]
+# 编写代码（新增组件、修改逻辑、重构等）
+description = 编写或修改任何 Vue/JS 代码时
+files =
+  rules/coding-standards.md
+  rules/layout_standards.md
+rules =
+  - 遵循文件命名规范（PascalCase / camelCase / kebab-case）
+  - 遵循 Vue SFC 结构规范（script setup → template → style scoped）
+  - 遵循 Composition API 使用原则
+  - Element Plus 组件无需手动 import，API 方法需要 import
+
+[scenario:write_style]
+# 编写样式
+description = 编写 CSS / 组件样式时
+files = rules/style-standards.md
+rules =
+  - 组件样式必须使用 scoped
+  - 类名使用 kebab-case 或 BEM
+  - Element Plus 覆盖使用 :deep()
+  - 优先使用 CSS 变量
+
+[scenario:git_commit]
+# Git 提交
+description = 提交代码时
+files = rules/git-commit-standards.md
+rules =
+  - Commit message 格式：type(scope): subject
+  - 分支命名遵循 feature/ fix/ hotfix/ release/ 规范
+  - 提交前自检：编译通过、无 console.log/ debugger、勿提交 node_modules
+
+[scenario:code_review]
+# 代码审查
+description = 进行代码审查时
+files =
+  rules/coding-standards.md
+  rules/style-standards.md
+  rules/layout_standards.md
+rules =
+  - 检查命名是否规范
+  - 检查 Vue SFC 结构顺序
+  - 检查样式作用域是否正确
+  - 检查是否有硬编码值
+
+[scenario:create_component]
+# 新建组件
+description = 创建新的 Vue 组件时
+files =
+  rules/coding-standards.md
+  rules/style-standards.md
+  rules/layout_standards.md
+rules =
+  - 文件使用 PascalCase 命名
+  - 结构：script setup → template → style scoped
+  - 类名使用 kebab-case
+  - 组件顶部添加用途注释
+
+[scenario:refactor]
+# 重构代码
+description = 进行代码重构时
+files =
+  rules/coding-standards.md
+  rules/style-standards.md
+  rules/layout_standards.md
+rules =
+  - 保持 SFC 块级顺序
+  - 优先使用 Composition API
+  - 抽取可复用逻辑到 composables/
+  - 不改变外部行为（重构不修 Bug）
+
+[scenario:setup_project]
+# 项目初始化 / 配置
+description = 项目初始化或修改工程配置时
+files = rules/coding-standards.md
+rules =
+  - 遵循目录结构规范
+  - 全局样式放入 src/style.css
+  - 配置 Vite / 插件遵循最小化原则
