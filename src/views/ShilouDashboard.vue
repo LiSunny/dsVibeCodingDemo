@@ -1,611 +1,893 @@
+<!--
+  组件名称: ShilouDashboard
+  用途: 石楼镇安全综治指挥大屏 - 数据概览页
+  布局模式: 统计卡片 + 图表 + 列表组合
+-->
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import StatsCard from '@/components/StatsCard.vue'
+import {
+  Monitor, User, View, Timer, Warning, DataLine,
+  Document, CircleCheck, CircleClose,
+  Lightning, Sunny, Service, Suitcase, Connection
+} from '@element-plus/icons-vue'
 
-// 模拟实时数据
+const router = useRouter()
+
+// ==================== 加载状态 ====================
+const pageLoading = ref(true)
+setTimeout(() => { pageLoading.value = false }, 800)
+
+// ==================== 实时时间 ====================
 const currentTime = ref('')
-const onlineDevices = ref(128)
-const totalVisitors = ref(3456)
-const activeAlarms = ref(3)
-const systemHealth = ref(98.5)
-const dataThroughput = ref('1.2 TB')
-const todayEvents = ref(267)
-
-const deviceStatus = ref([
-  { name: '温湿度传感器', status: 'online', value: '24.6°C / 58%RH', icon: 'Odometer' },
-  { name: '烟雾报警器', status: 'online', value: '正常', icon: 'Bell' },
-  { name: '门禁系统', status: 'online', value: '已锁定', icon: 'Lock' },
-  { name: '视频监控', status: 'warning', value: '3路离线', icon: 'VideoCamera' },
-  { name: '消防水泵', status: 'online', value: '0.8MPa', icon: 'Switch' },
-  { name: '电梯运行', status: 'online', value: '2部运行', icon: 'Connection' },
-])
-
-const recentAlarms = ref([
-  { id: 1, level: 'danger', time: '14:12:35', device: '视频监控 #12', message: '设备离线', status: '未处理' },
-  { id: 2, level: 'warning', time: '13:58:22', device: '温湿度传感器 #03', message: '温度超过阈值(28°C)', status: '处理中' },
-  { id: 3, level: 'danger', time: '13:45:10', device: '烟雾报警器 #07', message: '烟雾浓度异常', status: '未处理' },
-  { id: 4, level: 'info', time: '13:32:08', device: '门禁系统 #01', message: '非法闯入告警', status: '已恢复' },
-  { id: 5, level: 'warning', time: '13:15:44', device: '消防水泵 #02', message: '水压偏低(0.3MPa)', status: '已处理' },
-])
-
-const energyData = ref([
-  { label: '一号楼', value: 45.6 },
-  { label: '二号楼', value: 38.2 },
-  { label: '三号楼', value: 52.1 },
-  { label: '四号楼', value: 41.8 },
-  { label: '五号楼', value: 35.5 },
-  { label: '公共区域', value: 28.9 },
-])
-
-const dailyTrend = ref([
-  { time: '08:00', value: 120 },
-  { time: '09:00', value: 185 },
-  { time: '10:00', value: 210 },
-  { time: '11:00', value: 256 },
-  { time: '12:00', value: 198 },
-  { time: '13:00', value: 175 },
-  { time: '14:00', value: 242 },
-])
-
-// 实时时钟
-let timer = null
 const updateTime = () => {
   const now = new Date()
   currentTime.value = now.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
 }
-
 onMounted(() => {
   updateTime()
-  timer = setInterval(updateTime, 1000)
+  setInterval(updateTime, 1000)
 })
 
-onBeforeUnmount(() => {
-  if (timer) clearInterval(timer)
+// ==================== 统计卡片数据 ====================
+const statsCards = [
+  {
+    key: 'monitor', icon: Monitor, label: '监测设备', value: '1,286', unit: '台',
+    online: '1,263', onlineRate: '98.2', color: 'primary'
+  },
+  {
+    key: 'personnel', icon: User, label: '在岗人员', value: '328', unit: '人',
+    online: null, onlineRate: null, color: 'success'
+  },
+  {
+    key: 'visitors', icon: View, label: '今日访客', value: '1,845', unit: '人次',
+    online: null, onlineRate: null, color: 'warning'
+  },
+  {
+    key: 'response', icon: Timer, label: '平均响应', value: '2.8', unit: '分钟',
+    online: null, onlineRate: null, color: 'danger'
+  },
+]
+
+// ==================== 实时预警数据 ====================
+const alerts = ref([
+  { id: 1, level: '严重', levelType: 'danger', title: '3号消防通道堵塞超过15分钟', location: 'C区2楼东侧', time: '10分钟前', status: '待处理' },
+  { id: 2, level: '严重', levelType: 'danger', title: '配电房B-3温度异常升高至62°C', location: 'B区地下1层', time: '18分钟前', status: '待处理' },
+  { id: 3, level: '一般', levelType: 'warning', title: 'D区2号电梯维保已逾期3天', location: 'D区', time: '25分钟前', status: '处理中' },
+  { id: 4, level: '一般', levelType: 'warning', title: '北门人脸识别设备离线', location: '北门入口', time: '32分钟前', status: '待处理' },
+  { id: 5, level: '提示', levelType: '', title: 'E区烟感传感器电量低于20%', location: 'E区3楼', time: '45分钟前', status: '已派单' },
+])
+
+const alertCount = computed(() => alerts.value.length)
+
+// ==================== 设备监控数据 ====================
+const equipmentData = [
+  { label: 'AI摄像头', total: 512, online: 508, icon: Monitor },
+  { label: '烟感探测器', total: 960, online: 952, icon: Sunny },
+  { label: '电气监测', total: 120, online: 118, icon: Lightning },
+  { label: '消防栓', total: 86, online: 86, icon: Service },
+  { label: '应急广播', total: 64, online: 62, icon: DataLine },
+  { label: '门禁闸机', total: 32, online: 30, icon: Suitcase },
+]
+
+const maxEquipmentTotal = computed(() => Math.max(...equipmentData.map(d => d.total)))
+
+// ==================== 各场所用能数据（柱状图） ====================
+const energyData = ref([
+  { label: 'A区商场', value: 856 },
+  { label: 'B区写字楼', value: 620 },
+  { label: 'C区厂房', value: 1024 },
+  { label: 'D区仓储', value: 380 },
+  { label: 'E区宿舍', value: 245 },
+])
+
+const maxEnergy = computed(() => Math.max(...energyData.value.map(d => d.value)))
+
+// ==================== 实时趋势 ====================
+const dailyTrend = ref([
+  { time: '08:00', value: 320 },
+  { time: '09:00', value: 680 },
+  { time: '10:00', value: 920 },
+  { time: '11:00', value: 1150 },
+  { time: '12:00', value: 980 },
+  { time: '13:00', value: 780 },
+  { time: '14:00', value: 890 },
+  { time: '15:00', value: 1020 },
+  { time: '16:00', value: 1100 },
+  { time: '17:00', value: 950 },
+  { time: '18:00', value: 720 },
+  { time: '19:00', value: 520 },
+])
+
+const maxTrend = computed(() => Math.max(...dailyTrend.value.map(d => d.value)))
+const trendPoints = computed(() => {
+  return dailyTrend.value.map((d, i) => ({
+    x: (i / (dailyTrend.value.length - 1)) * 100,
+    y: 100 - (d.value / (maxTrend.value || 1)) * 100
+  }))
+})
+const trendLine = computed(() => {
+  return trendPoints.value.map(p => `${p.x},${p.y}`).join(' ')
 })
 
-const getStatusColor = (status) => {
-  const map = { online: '#67c23a', warning: '#e6a23c', offline: '#f56c6c' }
-  return map[status] || '#909399'
+// ==================== 最近事件列表 ====================
+const events = ref([
+  { id: 1, type: 'success', title: '月度消防演练顺利完成', detail: '参与人数326人，达到预期目标', time: '1小时前' },
+  { id: 2, type: 'warning', title: 'C区电力检修计划发布', detail: '5月15日 00:00-06:00 停电检修', time: '2小时前' },
+  { id: 3, type: '', title: '外来人员登记系统升级', detail: '新版人脸识别系统已部署上线', time: '3小时前' },
+  { id: 4, type: 'danger', title: '2号货梯故障报修', detail: '维保人员已到场处理', time: '4小时前' },
+])
+
+// ==================== 预警级别颜色 ====================
+const getAlertLevelColor = (levelType) => {
+  if (levelType === 'danger') return 'var(--color-danger)'
+  if (levelType === 'warning') return 'var(--color-warning)'
+  return 'var(--text-muted)'
 }
 
-const getStatusText = (status) => {
-  const map = { online: '在线', warning: '警告', offline: '离线' }
-  return map[status] || status
+const getEventTypeColor = (type) => {
+  if (type === 'danger') return 'var(--color-danger)'
+  if (type === 'warning') return 'var(--color-warning)'
+  if (type === 'success') return 'var(--color-success)'
+  return 'var(--text-muted)'
 }
 
-const getLevelType = (level) => {
-  const map = { danger: 'danger', warning: 'warning', info: 'info' }
-  return map[level] || 'info'
+const getEventTypeBg = (type) => {
+  if (type === 'danger') return 'var(--color-danger-bg)'
+  if (type === 'warning') return 'var(--color-warning-bg)'
+  if (type === 'success') return 'var(--color-success-bg)'
+  return 'var(--fill-secondary)'
 }
-
-const getLevelText = (level) => {
-  const map = { danger: '严重', warning: '警告', info: '提示' }
-  return map[level] || level
-}
-
-const getAlarmStatusType = (status) => {
-  const map = { '未处理': 'danger', '处理中': 'warning', '已恢复': 'success', '已处理': 'info' }
-  return map[status] || 'info'
-}
-
-const maxEnergy = Math.max(...energyData.value.map(d => d.value))
-const maxTrend = Math.max(...dailyTrend.value.map(d => d.value))
 </script>
 
 <template>
-  <div class="dashboard">
-    <!-- 顶部标题栏 -->
-    <div class="dashboard-header">
-      <div class="header-left">
-        <h1>🏢 石楼智慧楼宇管理平台</h1>
-        <span class="header-subtitle">Smart Building Management Dashboard</span>
+  <div class="page-content">
+    <!-- ==================== 骨架屏加载 ==================== -->
+    <template v-if="pageLoading">
+      <div class="skeleton-row">
+        <el-skeleton animated class="skeleton-card" v-for="n in 4" :key="'sc-' + n">
+          <template #template>
+            <el-skeleton-item variant="text" style="width: 50%" />
+            <el-skeleton-item variant="text" style="width: 30%" />
+          </template>
+        </el-skeleton>
       </div>
-      <div class="header-right">
-        <span class="time-display">{{ currentTime }}</span>
-        <el-tag type="success" size="large" effect="dark">系统运行中</el-tag>
+      <el-skeleton :rows="6" animated class="skeleton-panel" />
+      <el-skeleton :rows="4" animated class="skeleton-panel" />
+    </template>
+
+    <template v-else>
+      <!-- ==================== 顶部栏 ==================== -->
+      <div class="dashboard-topbar">
+        <div class="topbar-left">
+          <h1 class="topbar-title">石楼镇安全综治指挥中心</h1>
+        </div>
+        <div class="topbar-right">
+          <span class="topbar-time">{{ currentTime }}</span>
+          <el-tag type="success" size="small" effect="dark">系统运行中</el-tag>
+        </div>
       </div>
-    </div>
 
-    <!-- 核心指标卡片 -->
-    <el-row :gutter="16" class="metric-row">
-      <el-col :span="4">
-        <div class="metric-card metric-card--blue">
-          <div class="metric-icon">
-            <el-icon :size="32"><Connection /></el-icon>
-          </div>
-          <div class="metric-info">
-            <div class="metric-value">{{ onlineDevices }}</div>
-            <div class="metric-label">在线设备</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="4">
-        <div class="metric-card metric-card--green">
-          <div class="metric-icon">
-            <el-icon :size="32"><User /></el-icon>
-          </div>
-          <div class="metric-info">
-            <div class="metric-value">{{ totalVisitors.toLocaleString() }}</div>
-            <div class="metric-label">累计访客</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="4">
-        <div class="metric-card metric-card--red">
-          <div class="metric-icon">
-            <el-icon :size="32"><WarningFilled /></el-icon>
-          </div>
-          <div class="metric-info">
-            <div class="metric-value">{{ activeAlarms }}</div>
-            <div class="metric-label">活跃告警</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="4">
-        <div class="metric-card metric-card--cyan">
-          <div class="metric-icon">
-            <el-icon :size="32"><Monitor /></el-icon>
-          </div>
-          <div class="metric-info">
-            <div class="metric-value">{{ systemHealth }}%</div>
-            <div class="metric-label">系统健康度</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="4">
-        <div class="metric-card metric-card--orange">
-          <div class="metric-icon">
-            <el-icon :size="32"><DataAnalysis /></el-icon>
-          </div>
-          <div class="metric-info">
-            <div class="metric-value">{{ dataThroughput }}</div>
-            <div class="metric-label">数据吞吐量</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="4">
-        <div class="metric-card metric-card--purple">
-          <div class="metric-icon">
-            <el-icon :size="32"><Document /></el-icon>
-          </div>
-          <div class="metric-info">
-            <div class="metric-value">{{ todayEvents }}</div>
-            <div class="metric-label">今日事件</div>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
-
-    <!-- 主要内容区域 -->
-    <el-row :gutter="16" class="content-row">
-      <!-- 左侧：设备状态 -->
-      <el-col :span="8">
-        <el-card shadow="hover" class="panel-card">
-          <template #header>
-            <div class="panel-header">
-              <span>📡 设备状态监控</span>
-              <el-tag size="small">共{{ deviceStatus.length }}台</el-tag>
-            </div>
+      <!-- ==================== 统计卡片行 ==================== -->
+      <div class="stats-row">
+        <StatsCard
+          v-for="card in statsCards"
+          :key="card.key"
+          type="dashboard"
+          :value="card.value"
+          :label="card.label"
+          :status="card.color"
+          :unit="card.unit"
+          :footer-text="card.online ? `在线 ${card.online} · 在线率 ${card.onlineRate}%` : ''"
+        >
+          <template #icon>
+            <el-icon :size="24"><component :is="card.icon" /></el-icon>
           </template>
-          <div class="device-list">
-            <div
-              v-for="device in deviceStatus"
-              :key="device.name"
-              class="device-item"
-            >
-              <div class="device-left">
-                <span
-                  class="status-dot"
-                  :style="{ backgroundColor: getStatusColor(device.status) }"
-                ></span>
-                <el-icon :size="18"><component :is="device.icon" /></el-icon>
-                <span class="device-name">{{ device.name }}</span>
-              </div>
-              <div class="device-right">
-                <span class="device-value">{{ device.value }}</span>
-                <el-tag
-                  :type="device.status === 'online' ? 'success' : 'warning'"
-                  size="small"
-                  effect="plain"
-                >
-                  {{ getStatusText(device.status) }}
-                </el-tag>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 中间：能耗统计 -->
-      <el-col :span="8">
-        <el-card shadow="hover" class="panel-card">
-          <template #header>
-            <div class="panel-header">
-              <span>⚡ 各楼栋能耗 (kWh)</span>
-              <el-tag size="small" type="info">今日</el-tag>
-            </div>
+          <template v-if="card.online" #footerIcon>
+            <CircleCheck />
           </template>
-          <div class="chart-bar-container">
-            <div
-              v-for="item in energyData"
-              :key="item.label"
-              class="chart-bar-item"
-            >
-              <div class="chart-bar-label">{{ item.label }}</div>
-              <div class="chart-bar-track">
-                <div
-                  class="chart-bar-fill"
-                  :style="{ width: (item.value / maxEnergy * 100) + '%' }"
-                ></div>
-              </div>
-              <div class="chart-bar-value">{{ item.value }}</div>
-            </div>
-          </div>
-        </el-card>
+        </StatsCard>
+      </div>
 
-        <!-- 实时趋势 -->
-        <el-card shadow="hover" class="panel-card" style="margin-top: 16px;">
-          <template #header>
-            <div class="panel-header">
-              <span>📈 实时人流量趋势</span>
-              <el-tag size="small" type="primary">今日</el-tag>
+      <!-- ==================== 实时预警 & 事件列表 ==================== -->
+      <div class="content-row">
+        <!-- 实时预警 -->
+        <div class="panel-card panel-card--alerts">
+          <div class="panel-header">
+            <div class="panel-title">
+              <el-icon :size="18"><Warning /></el-icon>
+              实时预警
             </div>
-          </template>
-          <div class="trend-chart">
-            <div
-              v-for="item in dailyTrend"
-              :key="item.time"
-              class="trend-bar-container"
-            >
+            <el-tag type="danger" size="small" effect="dark">共{{ alertCount }}条</el-tag>
+          </div>
+          <div class="panel-body panel-body--alerts">
+            <el-empty v-if="alerts.length === 0" description="暂无预警信息，系统运行正常" :image-size="80" />
+            <div v-else class="alert-list">
               <div
-                class="trend-bar"
-                :style="{ height: (item.value / maxTrend * 120) + 'px' }"
+                v-for="item in alerts"
+                :key="item.id"
+                class="alert-item"
               >
-                <span class="trend-bar-val">{{ item.value }}</span>
+                <div class="alert-dot" :style="{ background: getAlertLevelColor(item.levelType) }"></div>
+                <div class="alert-content">
+                  <div class="alert-title">
+                    <el-tag
+                      v-if="item.levelType"
+                      :type="item.levelType"
+                      size="small"
+                      effect="dark"
+                      class="alert-tag"
+                    >{{ item.level }}</el-tag>
+                    <span v-else class="alert-level-text">{{ item.level }}</span>
+                    {{ item.title }}
+                  </div>
+                  <div class="alert-meta">
+                    <span><el-icon :size="12"><Connection /></el-icon> {{ item.location }}</span>
+                    <span class="alert-meta-divider">·</span>
+                    <span><el-icon :size="12"><Timer /></el-icon> {{ item.time }}</span>
+                  </div>
+                </div>
+                <el-button type="primary" plain size="small">处理</el-button>
               </div>
-              <div class="trend-bar-label">{{ item.time }}</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
+        </div>
 
-      <!-- 右侧：告警列表 -->
-      <el-col :span="8">
-        <el-card shadow="hover" class="panel-card">
-          <template #header>
-            <div class="panel-header">
-              <span>🔔 最新告警</span>
-              <el-button type="primary" link size="small">查看全部</el-button>
+        <!-- 最近事件 -->
+        <div class="panel-card panel-card--events">
+          <div class="panel-header">
+            <div class="panel-title">
+              <el-icon :size="18"><Document /></el-icon>
+              最近事件
             </div>
-          </template>
-          <div class="alarm-list">
-            <div
-              v-for="alarm in recentAlarms"
-              :key="alarm.id"
-              class="alarm-item"
-            >
-              <div class="alarm-header">
-                <el-tag :type="getLevelType(alarm.level)" size="small" effect="dark">
-                  {{ getLevelText(alarm.level) }}
-                </el-tag>
-                <span class="alarm-time">{{ alarm.time }}</span>
-              </div>
-              <div class="alarm-body">
-                <div class="alarm-device">{{ alarm.device }}</div>
-                <div class="alarm-message">{{ alarm.message }}</div>
-              </div>
-              <div class="alarm-footer">
-                <el-tag :type="getAlarmStatusType(alarm.status)" size="small" effect="plain">
-                  {{ alarm.status }}
-                </el-tag>
-                <el-button type="primary" link size="small">处理</el-button>
+            <el-button type="primary" link size="small">全部</el-button>
+          </div>
+          <div class="panel-body panel-body--events">
+            <el-empty v-if="events.length === 0" description="暂无最近事件" :image-size="80" />
+            <div v-else class="event-list">
+              <div
+                v-for="item in events"
+                :key="item.id"
+                class="event-item"
+              >
+                <div class="event-dot" :style="{ background: getEventTypeColor(item.type), boxShadow: `0 0 6px ${getEventTypeColor(item.type)}` }"></div>
+                <div class="event-content">
+                  <div class="event-title">{{ item.title }}</div>
+                  <div class="event-detail">{{ item.detail }}</div>
+                </div>
+                <span class="event-time">{{ item.time }}</span>
               </div>
             </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+      </div>
+
+      <!-- ==================== 设备监控 & 用能情况 ==================== -->
+      <div class="content-row">
+        <!-- 设备监控 -->
+        <div class="panel-card panel-card--equipment">
+          <div class="panel-header">
+            <div class="panel-title">
+              <el-icon :size="18"><Monitor /></el-icon>
+              设备监控
+            </div>
+            <el-tag size="small" type="success" effect="plain">整体在线率 98.5%</el-tag>
+          </div>
+          <div class="panel-body panel-body--equipment">
+            <el-empty v-if="equipmentData.length === 0" description="暂无设备数据" :image-size="80" />
+            <div v-else class="equipment-list">
+              <div
+                v-for="item in equipmentData"
+                :key="item.label"
+                class="equipment-item"
+              >
+                <div class="equipment-icon">
+                  <el-icon :size="18"><component :is="item.icon" /></el-icon>
+                </div>
+                <div class="equipment-info">
+                  <div class="equipment-label">{{ item.label }}</div>
+                  <div
+                    class="equipment-bar-track"
+                  >
+                    <div
+                      class="equipment-bar-fill"
+                      :class="{ 'equipment-bar-fill--warning': item.online / item.total < 0.95 }"
+                      :style="{ width: (item.online / maxEquipmentTotal * 100) + '%' }"
+                    ></div>
+                  </div>
+                </div>
+                <div class="equipment-count">
+                  <span class="equipment-count-online">{{ item.online }}</span>
+                  <span class="equipment-count-divider">/</span>
+                  <span class="equipment-count-total">{{ item.total }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 各场所用能情况 -->
+        <div class="panel-card panel-card--energy">
+          <div class="panel-header">
+            <div class="panel-title">
+              <el-icon :size="18"><Lightning /></el-icon>
+              各场所用能情况（kW·h）
+            </div>
+          </div>
+          <div class="panel-body panel-body--energy">
+            <el-empty v-if="energyData.length === 0" description="暂无用能数据" :image-size="80" />
+            <div v-else class="energy-bars">
+              <div
+                v-for="item in energyData"
+                :key="item.label"
+                class="energy-bar-item"
+              >
+                <div class="energy-bar-label">{{ item.label }}</div>
+                <div class="energy-bar-track">
+                  <div
+                    class="energy-bar-fill"
+                    :style="{ width: (item.value / maxEnergy * 100) + '%' }"
+                  ></div>
+                </div>
+                <div class="energy-bar-value">{{ item.value }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 实时人流量趋势 ==================== -->
+      <div class="panel-card panel-card--trend">
+        <div class="panel-header">
+          <div class="panel-title">
+            <el-icon :size="18"><DataLine /></el-icon>
+            实时人流量趋势
+          </div>
+          <el-tag size="small" type="primary">今日</el-tag>
+        </div>
+        <div class="panel-body panel-body--trend">
+          <el-empty v-if="dailyTrend.length === 0" description="暂无趋势数据" :image-size="80" />
+          <div v-else class="trend-chart">
+            <!-- SVG 趋势线 -->
+            <div class="trend-svg-wrap">
+              <svg
+                class="trend-svg"
+                viewBox="0 0 100 50"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.25" />
+                    <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0.02" />
+                  </linearGradient>
+                </defs>
+                <polygon
+                  :points="`0,50 ${trendLine} 100,50`"
+                  fill="url(#trendGradient)"
+                />
+                <polyline
+                  :points="trendLine"
+                  fill="none"
+                  stroke="var(--color-primary)"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <!-- 柱状图 -->
+            <div class="trend-bars">
+              <div
+                v-for="item in dailyTrend"
+                :key="item.time"
+                class="trend-bar-container"
+              >
+                <div
+                  class="trend-bar"
+                  :style="{ height: (item.value / maxTrend * 100) + '%' }"
+                >
+                  <span class="trend-bar-val">{{ item.value }}</span>
+                </div>
+                <div class="trend-bar-label">{{ item.time }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 快捷入口 ==================== -->
+      <div class="quick-links">
+        <el-button
+          v-for="item in [
+            { label: '通知公告', path: '/news' },
+            { label: '应急预警', path: '/alerts' },
+            { label: '重点人员', path: '/personnel' },
+            { label: '安全履责', path: '/safety' },
+            { label: '物资云仓', path: '/warehouse' },
+            { label: '救援指挥', path: '/rescue' },
+          ]"
+          :key="item.path"
+          type="default"
+          class="quick-link-btn"
+          @click="router.push(item.path)"
+        >
+          {{ item.label }}
+        </el-button>
+      </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.dashboard {
-  padding: var(--spacing-md);
-  background: var(--fill-page);
-  min-height: 100%;
+
+/* ==================== 骨架屏 ==================== */
+.skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-16);
+  margin-bottom: var(--spacing-16);
 }
 
-/* 顶部标题栏 */
-.dashboard-header {
+.skeleton-card {
+  padding: var(--spacing-lg);
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-panel {
+  margin-bottom: var(--spacing-16);
+  padding: var(--spacing-lg);
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+}
+
+/* ==================== 顶部栏 ==================== */
+.dashboard-topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-16) var(--spacing-24);
-  background: var(--sidebar-bg);
+  padding: var(--spacing-lg) var(--spacing-16);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-16);
+}
+
+.topbar-title {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
   color: var(--text-inverse);
-}
-
-.header-left h1 {
-  font-size: var(--font-size-h3);
   margin: 0;
-  font-weight: var(--font-weight-medium);
-}
-
-.header-subtitle {
-  font-size: var(--font-size-xs);
-  opacity: 0.8;
-  letter-spacing: 2px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-16);
-}
-
-.time-display {
-  font-size: var(--font-size-body);
-  font-family: var(--font-family-mono);
   letter-spacing: 1px;
 }
 
-/* 指标卡片 */
-.metric-row {
-  margin-bottom: var(--spacing-16);
-}
-
-.metric-card {
+.topbar-right {
   display: flex;
   align-items: center;
-  gap: var(--spacing-12);
-  padding: var(--spacing-16);
-  border-radius: var(--radius-lg);
-  color: var(--text-inverse);
-  height: 88px;
-  box-sizing: border-box;
+  gap: var(--spacing-md);
 }
 
-.metric-card--blue   { background: var(--color-info); }
-.metric-card--green  { background: var(--color-success); }
-.metric-card--red    { background: var(--color-danger); }
-.metric-card--cyan   { background: var(--color-primary); }
-.metric-card--orange { background: var(--color-warning); }
-.metric-card--purple { background: var(--color-primary-dark); }
-
-.metric-icon {
-  opacity: 0.9;
-  flex-shrink: 0;
+.topbar-time {
+  font-size: var(--font-size-small);
+  color: rgba(255, 255, 255, 0.9);
+  font-variant-numeric: tabular-nums;
 }
 
-.metric-info {
-  min-width: 0;
-}
-
-.metric-value {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-bold);
-  line-height: 1.2;
-}
-
-.metric-label {
-  font-size: var(--font-size-xs);
-  opacity: 0.85;
-  margin-top: var(--spacing-2);
-}
-
-/* 面板卡片 */
-.panel-card {
-  border-radius: var(--radius-lg);
+/* ==================== 统计卡片行 ==================== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-16);
   margin-bottom: var(--spacing-16);
 }
 
-.panel-card :deep(.el-card__header) {
-  padding: var(--spacing-12) var(--spacing-16);
-  background: var(--fill-secondary);
-  border-bottom: 1px solid var(--border-low);
+/* ==================== 内容行 ==================== */
+.content-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-16);
+  margin-bottom: var(--spacing-16);
+}
+
+/* ==================== 面板卡片 ==================== */
+.panel-card {
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-body);
-}
-
-/* 设备列表 */
-.device-list {
-  max-height: 420px;
-  overflow-y: auto;
-}
-
-.device-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-12) 0;
+  padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--border-low);
+  background: var(--fill-secondary);
 }
 
-.device-item:last-child {
+.panel-title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.panel-body {
+  padding: var(--spacing-md);
+}
+
+.panel-body--alerts {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.panel-body--events {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.panel-body--equipment {
+  padding: var(--spacing-lg);
+}
+
+.panel-body--energy {
+  padding: var(--spacing-lg);
+}
+
+.panel-body--trend {
+  padding: var(--spacing-lg);
+}
+
+/* ==================== 预警列表 ==================== */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-low);
+  transition: background-color 0.2s ease;
+}
+
+.alert-item:last-child {
   border-bottom: none;
 }
 
-.device-left {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-8);
+.alert-item:hover {
+  background: var(--fill-secondary);
 }
 
-.status-dot {
+.alert-dot {
   width: 8px;
   height: 8px;
   border-radius: var(--radius-round);
   flex-shrink: 0;
 }
 
-.device-name {
+.alert-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
   font-size: var(--font-size-small);
   color: var(--text-primary);
-}
-
-.device-right {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-8);
-}
-
-.device-value {
-  font-size: var(--font-size-small);
-  color: var(--text-secondary);
-  font-family: var(--font-family-mono);
-}
-
-/* 柱状图 */
-.chart-bar-container {
-  padding: 4px 0;
-}
-
-.chart-bar-item {
+  font-weight: var(--font-weight-medium);
   display: flex;
   align-items: center;
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-12);
+  flex-wrap: wrap;
 }
 
-.chart-bar-item:last-child {
-  margin-bottom: 0;
+.alert-tag {
+  font-size: var(--font-size-xs);
 }
 
-.chart-bar-label {
-  width: 64px;
+.alert-level-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.alert-meta {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--spacing-4);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.alert-meta-divider {
+  color: var(--border-primary);
+}
+
+/* ==================== 事件列表 ==================== */
+.event-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-low);
+  transition: background-color 0.2s ease;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-item:hover {
+  background: var(--fill-secondary);
+}
+
+.event-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-round);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.event-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-title {
+  font-size: var(--font-size-small);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.event-detail {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--spacing-2);
+}
+
+.event-time {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ==================== 设备监控 ==================== */
+.equipment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.equipment-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.equipment-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--fill-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.equipment-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.equipment-label {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-4);
+}
+
+.equipment-bar-track {
+  width: 100%;
+  height: 8px;
+  background: var(--fill-page);
+  border-radius: var(--radius-round);
+  overflow: hidden;
+}
+
+.equipment-bar-fill {
+  height: 100%;
+  background: var(--color-success);
+  border-radius: var(--radius-round);
+  transition: width 0.6s ease;
+}
+
+.equipment-bar-fill--warning {
+  background: var(--color-warning);
+}
+
+.equipment-count {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.equipment-count-online {
+  color: var(--color-success);
+}
+
+.equipment-count-divider {
+  color: var(--text-muted);
+  margin: 0 2px;
+}
+
+.equipment-count-total {
+  color: var(--text-secondary);
+}
+
+/* ==================== 用能柱状图 ==================== */
+.energy-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.energy-bar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.energy-bar-label {
+  width: 80px;
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
   text-align: right;
   flex-shrink: 0;
 }
 
-.chart-bar-track {
+.energy-bar-track {
   flex: 1;
-  height: 22px;
+  height: 20px;
   background: var(--fill-page);
   border-radius: var(--radius-round);
   overflow: hidden;
 }
 
-.chart-bar-fill {
+.energy-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-info));
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
   border-radius: var(--radius-round);
   transition: width 0.6s ease;
 }
 
-.chart-bar-value {
-  width: 40px;
+.energy-bar-value {
+  width: 56px;
   font-size: var(--font-size-small);
-  color: var(--text-primary);
   font-weight: var(--font-weight-medium);
-  font-family: var(--font-family-mono);
+  color: var(--text-primary);
+  text-align: right;
+  flex-shrink: 0;
 }
 
-/* 趋势图 */
+/* ==================== 实时趋势 ==================== */
 .trend-chart {
   display: flex;
-  justify-content: space-around;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.trend-svg-wrap {
+  width: 100%;
+  height: 80px;
+}
+
+.trend-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.trend-bars {
+  display: flex;
   align-items: flex-end;
-  height: 160px;
-  padding: 0 8px;
+  gap: 4px;
+  height: 140px;
 }
 
 .trend-bar-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-4);
-  flex: 1;
+  height: 100%;
+  justify-content: flex-end;
 }
 
 .trend-bar {
-  width: 28px;
-  background: linear-gradient(180deg, var(--color-primary), var(--color-info));
+  width: 100%;
+  max-width: 28px;
+  background: linear-gradient(180deg, var(--color-primary-hover), var(--color-primary));
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: height 0.4s ease;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  transition: height 0.5s ease;
-  min-height: 8px;
+  position: relative;
+  min-height: 4px;
 }
 
 .trend-bar-val {
-  font-size: var(--font-size-xs);
-  color: var(--text-inverse);
-  padding-top: var(--spacing-4);
-  font-weight: var(--font-weight-medium);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: -18px;
+  white-space: nowrap;
 }
 
 .trend-bar-label {
   font-size: var(--font-size-xs);
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
-/* 告警列表 */
-.alarm-list {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.alarm-item {
-  padding: var(--spacing-12);
-  margin-bottom: var(--spacing-8);
-  background: var(--fill-secondary);
-  border-radius: var(--radius-md);
-  border-left: 3px solid var(--border-default);
-}
-
-.alarm-item:last-child {
-  margin-bottom: 0;
-}
-
-.alarm-header {
+/* ==================== 快捷入口 ==================== */
+.quick-links {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-16);
+  padding: var(--spacing-md);
 }
 
-.alarm-time {
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-  font-family: var(--font-family-mono);
-}
-
-.alarm-body {
-  margin-bottom: var(--spacing-8);
-}
-
-.alarm-device {
+.quick-link-btn {
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
 }
 
-.alarm-message {
-  font-size: var(--font-size-body);
-  color: var(--text-secondary);
-  margin-top: var(--spacing-2);
+/* ==================== 响应式 ==================== */
+@media (max-width: 1024px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .content-row {
+    grid-template-columns: 1fr;
+  }
+
+  .skeleton-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.alarm-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+@media (max-width: 640px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .skeleton-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-topbar {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
 }
 </style>

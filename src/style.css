@@ -269,3 +269,14 @@ a:hover {
   background: var(--color-primary);
   color: var(--text-inverse);
 }
+
+/* ============================================================
+ * 全局内容区布局约束 (Page Content Layout)
+ * 所有业务页面的根容器统一使用 .page-content 类
+ * ============================================================ */
+.page-content {
+  padding: var(--spacing-md);
+  background: var(--fill-surface);
+  min-height: 100vh;
+  border-radius: var(--radius-md);
+}

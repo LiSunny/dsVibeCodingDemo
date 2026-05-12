@@ -1,5 +1,10 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import {
+  Bell, Search, Cpu, UserFilled, Lock, Sort, WarningFilled,
+  Cloudy, AlarmClock, List, ChatDotSquare, Aim, Box, OfficeBuilding,
+  Van, Connection
+} from '@element-plus/icons-vue'
 
 // ============================================================
 // 实时时钟
@@ -34,195 +39,195 @@ onBeforeUnmount(() => {
 const modules = ref([
   {
     id: 1,
-    icon: '📢',
+    icon: Bell,
     name: '石楼动态资讯',
     subtitle: '数据范围：近7天',
     metrics: [
-      { label: '未读企业数', value: 12, color: 'var(--color-danger)', tag: '需催办' },
-      { label: '整体已读率', value: '85%', type: 'ring', ringVal: 85, color: '#e6a23c' },
-      { label: '待反馈通知', value: 3, color: 'var(--color-warning)' },
+      { label: '未读企业数', value: 12, color: 'danger', tag: '需催办' },
+      { label: '整体已读率', value: '85%', type: 'ring', ringVal: 85 },
+      { label: '待反馈通知', value: 3, color: 'warning' },
     ],
     link: '/news',
   },
   {
     id: 2,
-    icon: '🔍',
+    icon: Search,
     name: '隐患舆情监测',
     subtitle: '整改期限≤7天+超期',
     metrics: [
-      { label: '需整改隐患', value: 8, color: 'var(--color-warning)', tag: '需督办' },
-      { label: '超期未整改', value: 4, color: 'var(--color-danger)', tag: '严重超期' },
-      { label: '整改率', value: '72%', type: 'ring', ringVal: 72, color: '#e6a23c' },
+      { label: '需整改隐患', value: 8, color: 'warning', tag: '需督办' },
+      { label: '超期未整改', value: 4, color: 'danger', tag: '严重超期' },
+      { label: '整改率', value: '72%', type: 'ring', ringVal: 72 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 3,
-    icon: '🤖',
+    icon: Cpu,
     name: '安消应AI预警',
     subtitle: '今日实时',
     metrics: [
-      { label: '活跃预警', value: 15, color: 'var(--color-danger)' },
-      { label: 'AI准确率', value: '94%', type: 'ring', ringVal: 94, color: 'var(--color-success)' },
-      { label: '今日新增', value: 6, color: 'var(--color-warning)' },
+      { label: '活跃预警', value: 15, color: 'danger' },
+      { label: 'AI准确率', value: '94%', type: 'ring', ringVal: 94 },
+      { label: '今日新增', value: 6, color: 'warning' },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 4,
-    icon: '👥',
+    icon: UserFilled,
     name: '重点人员联勤',
     subtitle: '实时监控',
     metrics: [
-      { label: '在管人员', value: 47, color: 'var(--color-primary)' },
-      { label: '今日关注', value: 5, color: 'var(--color-warning)', tag: '关注' },
-      { label: '联勤完成率', value: '88%', type: 'ring', ringVal: 88, color: '#e6a23c' },
+      { label: '在管人员', value: 47, color: 'primary' },
+      { label: '今日关注', value: 5, color: 'warning', tag: '关注' },
+      { label: '联勤完成率', value: '88%', type: 'ring', ringVal: 88 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 5,
-    icon: '🛡️',
+    icon: Lock,
     name: '主体安全履责',
     subtitle: '本月统计',
     metrics: [
-      { label: '履责到期', value: 9, color: 'var(--color-warning)', tag: '需督办' },
-      { label: '超期未履责', value: 3, color: 'var(--color-danger)' },
-      { label: '履责完成率', value: '76%', type: 'ring', ringVal: 76, color: '#e6a23c' },
+      { label: '履责到期', value: 9, color: 'warning', tag: '需督办' },
+      { label: '超期未履责', value: 3, color: 'danger' },
+      { label: '履责完成率', value: '76%', type: 'ring', ringVal: 76 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 6,
-    icon: '🔄',
+    icon: Sort,
     name: '分类流转督导',
     subtitle: '今日实时',
     metrics: [
-      { label: '待流转工单', value: 11, color: 'var(--color-warning)' },
-      { label: '流转超期', value: 2, color: 'var(--color-danger)', tag: '超期' },
-      { label: '按时流转率', value: '91%', type: 'ring', ringVal: 91, color: 'var(--color-success)' },
+      { label: '待流转工单', value: 11, color: 'warning' },
+      { label: '流转超期', value: 2, color: 'danger', tag: '超期' },
+      { label: '按时流转率', value: '91%', type: 'ring', ringVal: 91 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 7,
-    icon: '⚠️',
+    icon: WarningFilled,
     name: '风险作业报备',
     subtitle: '今日统计',
     metrics: [
-      { label: '进行中作业', value: 6, color: 'var(--color-primary)' },
-      { label: '今日报备', value: 3, color: 'var(--color-primary)' },
-      { label: '作业合规率', value: '95%', type: 'ring', ringVal: 95, color: 'var(--color-success)' },
+      { label: '进行中作业', value: 6, color: 'primary' },
+      { label: '今日报备', value: 3, color: 'primary' },
+      { label: '作业合规率', value: '95%', type: 'ring', ringVal: 95 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 8,
-    icon: '🌪️',
+    icon: Cloudy,
     name: '自然灾害预警',
     subtitle: '实时生效中',
     metrics: [
-      { label: '生效预警', value: 2, color: 'var(--color-danger)', tag: '预警中' },
-      { label: '影响人数', value: '1.2万', color: 'var(--color-warning)' },
-      { label: '响应率', value: '100%', type: 'ring', ringVal: 100, color: 'var(--color-success)' },
+      { label: '生效预警', value: 2, color: 'danger', tag: '预警中' },
+      { label: '影响人数', value: '1.2万', color: 'warning' },
+      { label: '响应率', value: '100%', type: 'ring', ringVal: 100 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 9,
-    icon: '🦠',
+    icon: AlarmClock,
     name: '疫情监测预警',
     subtitle: '实时监控',
     metrics: [
-      { label: '监测风险点', value: 5, color: 'var(--color-warning)' },
-      { label: '今日新增', value: 1, color: 'var(--color-primary)' },
-      { label: '预警准确率', value: '97%', type: 'ring', ringVal: 97, color: 'var(--color-success)' },
+      { label: '监测风险点', value: 5, color: 'warning' },
+      { label: '今日新增', value: 1, color: 'primary' },
+      { label: '预警准确率', value: '97%', type: 'ring', ringVal: 97 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 10,
-    icon: '📋',
+    icon: List,
     name: '聚众聚集报备',
     subtitle: '今日统计',
     metrics: [
-      { label: '进行中活动', value: 4, color: 'var(--color-primary)' },
-      { label: '今日报备', value: 2, color: 'var(--color-primary)' },
-      { label: '审批通过率', value: '89%', type: 'ring', ringVal: 89, color: '#e6a23c' },
+      { label: '进行中活动', value: 4, color: 'primary' },
+      { label: '今日报备', value: 2, color: 'primary' },
+      { label: '审批通过率', value: '89%', type: 'ring', ringVal: 89 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 11,
-    icon: '📣',
+    icon: ChatDotSquare,
     name: '网格员吹哨人',
     subtitle: '待处理',
     metrics: [
-      { label: '待处理吹哨', value: 7, color: 'var(--color-warning)', tag: '待办' },
-      { label: '今日新增', value: 3, color: 'var(--color-primary)' },
-      { label: '吹哨办结率', value: '82%', type: 'ring', ringVal: 82, color: '#e6a23c' },
+      { label: '待处理吹哨', value: 7, color: 'warning', tag: '待办' },
+      { label: '今日新增', value: 3, color: 'primary' },
+      { label: '吹哨办结率', value: '82%', type: 'ring', ringVal: 82 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 12,
-    icon: '🎯',
+    icon: Aim,
     name: '应急预案演练',
     subtitle: '年度统计',
     metrics: [
-      { label: '待执行演练', value: 4, color: 'var(--color-warning)' },
-      { label: '年度完成率', value: '65%', type: 'ring', ringVal: 65, color: 'var(--color-danger)' },
-      { label: '演练合格率', value: '93%', type: 'ring', ringVal: 93, color: 'var(--color-success)' },
+      { label: '待执行演练', value: 4, color: 'warning' },
+      { label: '年度完成率', value: '65%', type: 'ring', ringVal: 65 },
+      { label: '演练合格率', value: '93%', type: 'ring', ringVal: 93 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 13,
-    icon: '🏪',
+    icon: Box,
     name: '应急物资云仓',
     subtitle: '库存概览',
     metrics: [
-      { label: '库存总量', value: '3.6万件', color: 'var(--color-primary)' },
-      { label: '临期物资', value: 28, color: 'var(--color-warning)', tag: '临期' },
-      { label: '库存充足率', value: '92%', type: 'ring', ringVal: 92, color: 'var(--color-success)' },
+      { label: '库存总量', value: '3.6万件', color: 'primary' },
+      { label: '临期物资', value: 28, color: 'warning', tag: '临期' },
+      { label: '库存充足率', value: '92%', type: 'ring', ringVal: 92 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 14,
-    icon: '🏗️',
+    icon: OfficeBuilding,
     name: '平急两用场景',
     subtitle: '今日统计',
     metrics: [
-      { label: '在用场景', value: 12, color: 'var(--color-primary)' },
-      { label: '今日使用人次', value: 358, color: 'var(--color-primary)' },
-      { label: '场景利用率', value: '78%', type: 'ring', ringVal: 78, color: '#e6a23c' },
+      { label: '在用场景', value: 12, color: 'primary' },
+      { label: '今日使用人次', value: 358, color: 'primary' },
+      { label: '场景利用率', value: '78%', type: 'ring', ringVal: 78 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 15,
-    icon: '🚒',
+    icon: Van,
     name: '综治应急队伍',
     subtitle: '实时统计',
     metrics: [
-      { label: '在岗人员', value: 86, color: 'var(--color-primary)' },
-      { label: '今日值班', value: 24, color: 'var(--color-primary)' },
-      { label: '队伍到位率', value: '96%', type: 'ring', ringVal: 96, color: 'var(--color-success)' },
+      { label: '在岗人员', value: 86, color: 'primary' },
+      { label: '今日值班', value: 24, color: 'primary' },
+      { label: '队伍到位率', value: '96%', type: 'ring', ringVal: 96 },
     ],
-    link: '#',
+    link: '/home',
   },
   {
     id: 16,
-    icon: '🎮',
+    icon: Connection,
     name: '救援指挥联动',
     subtitle: '实时状态',
     metrics: [
-      { label: '待联动任务', value: 3, color: 'var(--color-warning)', tag: '待联动' },
-      { label: '进行中联动', value: 2, color: 'var(--color-primary)' },
-      { label: '联动完成率', value: '87%', type: 'ring', ringVal: 87, color: '#e6a23c' },
+      { label: '待联动任务', value: 3, color: 'warning', tag: '待联动' },
+      { label: '进行中联动', value: 2, color: 'primary' },
+      { label: '联动完成率', value: '87%', type: 'ring', ringVal: 87 },
     ],
-    link: '#',
+    link: '/home',
   },
 ])
 
@@ -243,6 +248,24 @@ const getRingColor = (val) => {
 }
 
 // ============================================================
+// 数字指标语义色映射
+// ============================================================
+const getNumColorVar = (colorKey) => {
+  const map = {
+    primary: 'var(--color-primary)',
+    success: 'var(--color-success)',
+    warning: 'var(--color-warning)',
+    danger: 'var(--color-danger)',
+    info: 'var(--color-info)',
+  }
+  return map[colorKey] || 'var(--text-primary)'
+}
+
+const getTagType = (colorKey) => {
+  return colorKey === 'danger' ? 'danger' : 'warning'
+}
+
+// ============================================================
 // 统计总览
 // ============================================================
 const overviewStats = computed(() => {
@@ -251,7 +274,7 @@ const overviewStats = computed(() => {
   modules.value.forEach((m) => {
     m.metrics.forEach((metric) => {
       if (metric.tag) totalAlerts++
-      if (metric.color === 'var(--color-danger)') totalDanger++
+      if (metric.color === 'danger') totalDanger++
     })
   })
   return { totalAlerts, totalDanger, totalModules: modules.value.length }
@@ -259,13 +282,13 @@ const overviewStats = computed(() => {
 </script>
 
 <template>
-  <div class="dashboard">
+  <div class="page-content">
     <!-- ============================================================ -->
     <!-- 顶部标题栏 -->
     <!-- ============================================================ -->
     <div class="dashboard-header">
       <div class="header-left">
-        <h1>🏢 石楼镇智慧治理平台</h1>
+        <h1>石楼镇智慧治理平台</h1>
         <span class="header-subtitle">16个板块 · 核心数据概览 Dashboard</span>
       </div>
       <div class="header-center">
@@ -304,7 +327,9 @@ const overviewStats = computed(() => {
         <!-- 卡片头部 -->
         <div class="card-header">
           <div class="card-title-row">
-            <span class="card-icon">{{ mod.icon }}</span>
+            <span class="card-icon">
+              <!-- <el-icon :size="24"><component :is="mod.icon" /></el-icon> -->
+            </span>
             <div class="card-title-info">
               <span class="card-name">{{ mod.name }}</span>
               <span class="card-subtitle">{{ mod.subtitle }}</span>
@@ -347,11 +372,11 @@ const overviewStats = computed(() => {
 
             <!-- 数字类型 -->
             <div v-else class="metric-item metric-num">
-              <span class="num-value" :style="{ color: metric.color }">
+              <span class="num-value" :style="{ color: getNumColorVar(metric.color) }">
                 {{ metric.value }}
                 <el-tag
                   v-if="metric.tag"
-                  :type="metric.color === 'var(--color-danger)' ? 'danger' : 'warning'"
+                  :type="getTagType(metric.color)"
                   size="small"
                   effect="dark"
                   class="num-tag"
@@ -377,11 +402,7 @@ const overviewStats = computed(() => {
 /* ============================================================
  * 整体布局
  * ============================================================ */
-.dashboard {
-  padding: var(--spacing-md);
-  background: var(--fill-page);
-  min-height: 100%;
-}
+
 
 /* ============================================================
  * 顶部标题栏
@@ -436,15 +457,15 @@ const overviewStats = computed(() => {
 .summary-num {
   font-size: var(--font-size-h2);
   font-weight: var(--font-weight-bold);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .summary-num.danger {
-  color: #f56c6c;
+  color: var(--color-danger);
 }
 
 .summary-num.warning {
-  color: #e6a23c;
+  color: var(--color-warning);
 }
 
 .summary-label {
@@ -544,8 +565,15 @@ const overviewStats = computed(() => {
 }
 
 .card-icon {
-  font-size: var(--font-size-h1);
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  flex-shrink: 0;
 }
 
 .card-title-info {

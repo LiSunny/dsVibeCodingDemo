@@ -8,17 +8,17 @@ const routes = [
   {
     path: '/home',
     name: 'Home',
-    component: () => import('../views/Home.vue'),
+    component: () => import('@/views/Home.vue'),
   },
   {
     path: '/news',
     name: 'NewsCenter',
-    component: () => import('../views/NewsCenter.vue'),
+    component: () => import('@/views/NewsCenter.vue'),
   },
   {
     path: '/news/:id',
     name: 'NewsDetail',
-    component: () => import('../views/NewsDetail.vue'),
+    component: () => import('@/views/NewsDetail.vue'),
   },
 ]
 

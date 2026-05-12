@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Fold, Expand } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -11,11 +12,11 @@ const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
+// 面包屑
 const handleSelect = (index) => {
   router.push(index)
 }
 
-// 面包屑
 const breadcrumb = computed(() => {
   const parts = route.path.split('/').filter(Boolean)
   if (parts.length === 0 || (parts.length === 1 && parts[0] === 'home')) return '首页'
@@ -32,8 +33,13 @@ const breadcrumb = computed(() => {
     <!-- 左侧可折叠菜单栏 -->
     <aside class="layout-sidebar" :data-collapsed="isCollapsed">
       <div class="sidebar-header">
-        <div class="logo">🏢 石楼平台</div>
-        <button class="collapse-btn" @click="toggleCollapse">☰</button>
+        <div class="logo">石楼平台</div>
+        <button class="collapse-btn" @click="toggleCollapse">
+          <el-icon :size="20">
+            <Fold v-if="!isCollapsed" />
+            <Expand v-else />
+          </el-icon>
+        </button>
       </div>
       <nav class="sidebar-nav">
         <el-menu
@@ -101,7 +107,7 @@ const breadcrumb = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 16px;
+  padding: var(--spacing-lg) var(--spacing-md);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -117,12 +123,14 @@ const breadcrumb = computed(() => {
   background: none;
   border: none;
   color: var(--sidebar-text);
-  font-size: var(--font-size-h3);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
   flex-shrink: 0;
   transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .collapse-btn:hover {
@@ -171,9 +179,10 @@ const breadcrumb = computed(() => {
 }
 
 .main-content {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  background-color: var(--fill-page);
 }
 </style>

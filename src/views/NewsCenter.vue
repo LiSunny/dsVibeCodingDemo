@@ -3,20 +3,28 @@
   用途: 模块1 - 石楼动态资讯二级专题页面，包含综合统计看板、通知列表、历史趋势分析
 -->
 <script setup>
-import { ref, computed, reactive, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  ArrowLeft, Download, Top, Bottom, Right,
+  Search
+} from '@element-plus/icons-vue'
+import StatsCard from '@/components/StatsCard.vue'
 
 const router = useRouter()
 
+// ==================== 加载状态 ====================
+const pageLoading = ref(true)
+setTimeout(() => { pageLoading.value = false }, 600)
+
 // ==================== 时间筛选 ====================
-const timeRange = ref('30d')
+const timeRange = ref('7d')
 const customDateRange = ref([])
 
 const timeRangeOptions = [
   { label: '近7天', value: '7d' },
   { label: '近30天', value: '30d' },
-  { label: '自定义', value: 'custom' },
   { label: '全部历史', value: 'all' },
 ]
 
@@ -60,29 +68,7 @@ const stats = computed(() => {
   return statsDataMap[timeRange.value] || statsDataMap['30d']
 })
 
-// 已读率颜色
-const readRateColor = computed(() => {
-  const rate = stats.value.readRate
-  if (rate >= 90) return 'var(--color-success)'
-  if (rate >= 70) return 'var(--color-warning)'
-  return 'var(--color-danger)'
-})
-
-// 环形进度条参数
-const ringCircumference = 2 * Math.PI * 54
-const ringOffset = computed(() => {
-  return ringCircumference - (stats.value.readRate / 100) * ringCircumference
-})
-
-// 反馈完成率颜色
-const feedbackRateColor = computed(() => {
-  const rate = stats.value.feedbackRate
-  if (rate >= 80) return 'var(--color-success)'
-  if (rate >= 60) return 'var(--color-warning)'
-  return 'var(--color-danger)'
-})
-
-// 3.2 通知列表数据
+// ==================== 3.2 通知列表数据 ====================
 const noticeList = ref([
   {
     id: 1,
@@ -230,6 +216,14 @@ const noticeList = ref([
   },
 ])
 
+// ==================== 分页 ====================
+const currentPage = ref(1)
+const pageSize = ref(8)
+const totalNotices = computed(() => filteredNotices.value.length)
+
+// 搜索关键字
+const searchKeyword = ref('')
+
 // 表格排序
 const tableSort = ref({ prop: 'unreadCount', order: 'descending' })
 const publisherFilter = ref('')
@@ -241,9 +235,16 @@ const publishers = computed(() => {
 
 const filteredNotices = computed(() => {
   let list = [...noticeList.value]
+  // 搜索过滤
+  if (searchKeyword.value.trim()) {
+    const kw = searchKeyword.value.trim().toLowerCase()
+    list = list.filter(n => n.title.toLowerCase().includes(kw))
+  }
+  // 发布人过滤
   if (publisherFilter.value) {
     list = list.filter(n => n.publisher === publisherFilter.value)
   }
+  // 排序
   if (tableSort.value.prop && tableSort.value.order) {
     const { prop, order } = tableSort.value
     list.sort((a, b) => {
@@ -253,6 +254,17 @@ const filteredNotices = computed(() => {
     })
   }
   return list
+})
+
+// 分页数据
+const pagedNotices = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredNotices.value.slice(start, start + pageSize.value)
+})
+
+// 搜索/筛选变更时重置到第一页
+watch([searchKeyword, publisherFilter], () => {
+  currentPage.value = 1
 })
 
 const handleTableSort = ({ prop, order }) => {
@@ -311,16 +323,6 @@ const unreadPoints = computed(() => {
   })
 })
 
-const noticeLinePath = computed(() => {
-  if (noticePoints.value.length === 0) return ''
-  return noticePoints.value.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-})
-
-const unreadLinePath = computed(() => {
-  if (unreadPoints.value.length === 0) return ''
-  return unreadPoints.value.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-})
-
 // SVG Y轴刻度
 const noticeYAxisTicks = computed(() => {
   const max = maxNoticeCount.value || 10
@@ -350,10 +352,11 @@ const getRateBarColor = (rate) => {
   return 'var(--color-danger)'
 }
 
+// 趋势图标：使用 Element Plus 图标替代 emoji
 const getTrendIcon = (trend) => {
-  if (trend === 'up') return '↑'
-  if (trend === 'down') return '↓'
-  return '→'
+  if (trend === 'up') return Top
+  if (trend === 'down') return Bottom
+  return Right
 }
 
 const getTrendColor = (trend) => {
@@ -372,9 +375,6 @@ const barPlotHeight = barChartHeight - barPadding.top - barPadding.bottom
 const barWidth = computed(() => Math.min(48, (barPlotWidth / enterpriseRanking.value.length) * 0.6))
 const barGap = computed(() => barPlotWidth / enterpriseRanking.value.length)
 
-// 选中的月份筛选
-const selectedMonth = ref('2026-05')
-
 // ==================== 导出 ====================
 const handleExport = () => {
   ElMessage.success('导出功能开发中，即将支持导出为Excel格式')
@@ -382,8 +382,8 @@ const handleExport = () => {
 </script>
 
 <template>
-  <div class="news-center">
-    <!-- 页面标题 -->
+  <div class="page-content">
+    <!-- ==================== 页面标题 ==================== -->
     <div class="page-header">
       <div class="page-header-left">
         <h2 class="page-title">石楼动态资讯</h2>
@@ -397,428 +397,427 @@ const handleExport = () => {
       </div>
     </div>
 
-    <!-- 时间筛选器 -->
-    <div class="filter-bar">
-      <span class="filter-label">时间范围：</span>
-      <el-radio-group v-model="timeRange" size="default">
-        <el-radio-button
-          v-for="opt in timeRangeOptions"
-          :key="opt.value"
-          :value="opt.value"
-        >
-          {{ opt.label }}
-        </el-radio-button>
-      </el-radio-group>
-      <template v-if="timeRange === 'custom'">
-        <el-date-picker
-          v-model="customDateRange"
-          type="daterange"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          style="margin-left: var(--spacing-md);"
-        />
-      </template>
-    </div>
+    <!-- ==================== 骨架屏加载 ==================== -->
+    <template v-if="pageLoading">
+      <el-skeleton :rows="5" animated class="skeleton-section" />
+      <el-skeleton :rows="8" animated class="skeleton-section" />
+    </template>
 
-    <!-- ==================== 3.1 综合统计看板 ==================== -->
-    <div class="section">
-      <h3 class="section-title">综合统计看板</h3>
-      <el-row :gutter="16" class="stats-row">
-        <!-- 通知总数 -->
-        <el-col :span="3">
-          <div class="stat-card">
-            <div class="stat-card-value stat-card-value--primary">{{ stats.totalNotices }}</div>
-            <div class="stat-card-label">通知总数</div>
-          </div>
-        </el-col>
-        <!-- 应读总人次 -->
-        <el-col :span="3">
-          <div class="stat-card">
-            <div class="stat-card-value">{{ stats.totalShouldRead }}</div>
-            <div class="stat-card-label">应读总人次</div>
-          </div>
-        </el-col>
-        <!-- 已读总人次 -->
-        <el-col :span="3">
-          <div class="stat-card">
-            <div class="stat-card-value stat-card-value--success">{{ stats.totalRead }}</div>
-            <div class="stat-card-label">已读总人次</div>
-          </div>
-        </el-col>
-        <!-- 整体已读率（环形） -->
-        <el-col :span="4">
-          <div class="stat-card stat-card--ring">
-            <svg width="130" height="130" viewBox="0 0 130 130" class="ring-chart">
-              <circle
-                cx="65" cy="65" r="54"
-                fill="none"
-                stroke="var(--border-low)"
-                stroke-width="10"
+    <template v-else>
+      <!-- ==================== 3.1 综合统计看板 ==================== -->
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title">综合统计看板</h3>
+          <div class="section-header-filter">
+            <el-select v-model="timeRange" class="time-range-select">
+              <el-option
+                v-for="opt in timeRangeOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
               />
-              <circle
-                cx="65" cy="65" r="54"
-                fill="none"
-                :stroke="readRateColor"
-                stroke-width="10"
-                stroke-linecap="round"
-                :stroke-dasharray="ringCircumference"
-                :stroke-dashoffset="ringOffset"
-                transform="rotate(-90 65 65)"
-                class="ring-chart-fill"
-              />
-              <text x="65" y="61" text-anchor="middle" class="ring-chart-value" :fill="readRateColor">
-                {{ stats.readRate }}%
-              </text>
-              <text x="65" y="80" text-anchor="middle" class="ring-chart-label" fill="var(--text-muted)">
-                整体已读率
-              </text>
-            </svg>
+            </el-select>
           </div>
-        </el-col>
-        <!-- 未读总人次 -->
-        <el-col :span="3">
-          <div class="stat-card stat-card--highlight">
-            <div class="stat-card-value stat-card-value--danger">{{ stats.totalUnread }}</div>
-            <div class="stat-card-label">未读总人次<el-tag size="small" type="danger" effect="plain" style="margin-left: 4px;">需催办</el-tag></div>
-          </div>
-        </el-col>
-        <!-- 要求反馈的通知数 -->
-        <el-col :span="4">
-          <div class="stat-card stat-card--highlight">
-            <div class="stat-card-value stat-card-value--warning">{{ stats.feedbackNotices }}</div>
-            <div class="stat-card-label">要求反馈通知数 <el-tag size="small" type="warning" effect="plain" style="margin-left: 4px;">需提醒</el-tag></div>
-          </div>
-        </el-col>
-        <!-- 反馈完成率 -->
-        <el-col :span="4">
-          <div class="stat-card">
-            <div class="stat-card-value" :style="{ color: feedbackRateColor }">{{ stats.feedbackRate }}%</div>
-            <div class="stat-card-label">反馈完成率</div>
-          </div>
-        </el-col>
-      </el-row>
-    </div>
-
-    <!-- ==================== 3.2 通知列表 ==================== -->
-    <div class="section">
-      <div class="section-header">
-        <h3 class="section-title">通知列表</h3>
-        <div class="section-header-actions">
-          <span class="filter-label">发布人：</span>
-          <el-select
-            v-model="publisherFilter"
-            placeholder="全部"
-            clearable
-            style="width: 140px;"
-          >
-            <el-option
-              v-for="pub in publishers"
-              :key="pub"
-              :label="pub"
-              :value="pub"
-            />
-          </el-select>
-          <el-button type="primary" @click="handleExport" style="margin-left: var(--spacing-sm);">
-            <el-icon><Download /></el-icon>
-            导出Excel
-          </el-button>
         </div>
+        <el-row :gutter="16" class="stats-row">
+          <el-col :span="3">
+            <StatsCard type="compact" :value="stats.totalNotices" label="通知总数" status="primary" />
+          </el-col>
+          <el-col :span="3">
+            <StatsCard type="compact" :value="stats.totalShouldRead" label="应读总人次" />
+          </el-col>
+          <el-col :span="3">
+            <StatsCard type="compact" :value="stats.totalRead" label="已读总人次" status="success" />
+          </el-col>
+          <el-col :span="4">
+            <StatsCard
+              type="compact"
+              :value="stats.readRate"
+              label="整体已读率"
+              :progress="stats.readRate"
+            />
+          </el-col>
+          <el-col :span="3">
+            <StatsCard
+              type="compact"
+              :value="stats.totalUnread"
+              label="未读总人次"
+              status="danger"
+              tag="需催办"
+              tag-type="danger"
+            />
+          </el-col>
+          <el-col :span="4">
+            <StatsCard
+              type="compact"
+              :value="stats.feedbackNotices"
+              label="要求反馈通知数"
+              status="warning"
+              tag="需提醒"
+              tag-type="warning"
+            />
+          </el-col>
+          <el-col :span="4">
+            <StatsCard
+              type="compact"
+              :value="stats.feedbackRate + '%'"
+              label="反馈完成率"
+              :status="stats.feedbackRate >= 80 ? 'success' : stats.feedbackRate >= 60 ? 'warning' : 'danger'"
+            />
+          </el-col>
+        </el-row>
       </div>
 
-      <el-table
-        :data="filteredNotices"
-        stripe
-        class="notice-table"
-        @sort-change="handleTableSort"
-        :default-sort="{ prop: 'unreadCount', order: 'descending' }"
-      >
-        <el-table-column prop="title" label="通知标题" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="publishTime" label="发布时间" width="120" sortable="custom" />
-        <el-table-column prop="publisher" label="发布人" width="100" />
-        <el-table-column prop="targetCount" label="目标企业数" width="110" sortable="custom" align="center" />
-        <el-table-column prop="readCount" label="已读数" width="80" sortable="custom" align="center" />
-        <el-table-column prop="unreadCount" label="未读数" width="80" sortable="custom" align="center">
-          <template #default="{ row }">
-            <span :class="{ 'unread-highlight': row.unreadCount > 4 }">{{ row.unreadCount }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="readRate" label="已读率" width="100" sortable="custom" align="center">
-          <template #default="{ row }">
-            <span :style="{ color: getRateColor(row.readRate), fontWeight: 'var(--font-weight-medium)' }">
-              {{ row.readRate }}%
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="needFeedback" label="是否需反馈" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.needFeedback ? 'warning' : 'info'" size="small" effect="plain">
-              {{ row.needFeedback ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="feedbackRate" label="反馈完成率" width="110" align="center">
-          <template #default="{ row }">
-            <template v-if="row.needFeedback && row.feedbackRate !== null">
-              <span :style="{ color: getRateColor(row.feedbackRate), fontWeight: 'var(--font-weight-medium)' }">
-                {{ row.feedbackRate }}%
-              </span>
-            </template>
-            <template v-else>
-              <span class="text-muted">-</span>
-            </template>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
-          <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleViewDetail(row)">
-              详情
-            </el-button>
-            <el-button
-              type="danger"
-              link
-              size="small"
-              :disabled="row.unreadCount === 0"
-              @click="handleUrge(row)"
+      <!-- ==================== 3.2 通知列表 ==================== -->
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title">通知列表</h3>
+          <div class="section-header-actions">
+            <!-- 搜索框 -->
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索通知标题"
+              clearable
+              :prefix-icon="Search"
+              class="search-input"
+            />
+            <span class="filter-label">发布人：</span>
+            <el-select
+              v-model="publisherFilter"
+              placeholder="全部"
+              clearable
+              class="publisher-select"
             >
-              催办
+              <el-option
+                v-for="pub in publishers"
+                :key="pub"
+                :label="pub"
+                :value="pub"
+              />
+            </el-select>
+            <el-button type="primary" @click="handleExport">
+              <el-icon><Download /></el-icon>
+              导出Excel
             </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
+          </div>
+        </div>
 
-    <!-- ==================== 3.4 历史趋势分析 ==================== -->
-    <div class="section">
-      <h3 class="section-title">历史趋势分析</h3>
+        <!-- 空状态 -->
+        <div v-if="filteredNotices.length === 0" class="empty-state">
+          <el-empty description="暂无匹配的通知数据" />
+        </div>
 
-      <el-row :gutter="16">
-        <!-- 折线图：通知数量 & 未读企业数变化 -->
-        <el-col :span="14">
-          <div class="chart-panel">
-            <div class="chart-panel-header">
-              <span class="chart-panel-title">通知发布数量 & 未读企业数变化（按月）</span>
-              <div class="chart-legend">
-                <span class="chart-legend-item">
-                  <span class="chart-legend-dot chart-legend-dot--primary"></span>
-                  通知数量
+        <!-- 通知表格 -->
+        <template v-else>
+          <el-table
+            :data="pagedNotices"
+            stripe
+            class="notice-table"
+            @sort-change="handleTableSort"
+            :default-sort="{ prop: 'unreadCount', order: 'descending' }"
+          >
+            <el-table-column prop="title" label="通知标题" min-width="220" show-overflow-tooltip />
+            <el-table-column prop="publishTime" label="发布时间" width="120" sortable="custom" />
+            <el-table-column prop="publisher" label="发布人" width="100" />
+            <el-table-column prop="targetCount" label="目标企业数" width="110" sortable="custom" align="center" />
+            <el-table-column prop="readCount" label="已读数" width="80" sortable="custom" align="center" />
+            <el-table-column prop="unreadCount" label="未读数" width="80" sortable="custom" align="center">
+              <template #default="{ row }">
+                <span :class="{ 'unread-highlight': row.unreadCount > 4 }">{{ row.unreadCount }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="readRate" label="已读率" width="100" sortable="custom" align="center">
+              <template #default="{ row }">
+                <span :style="{ color: getRateColor(row.readRate), fontWeight: 'var(--font-weight-medium)' }">
+                  {{ row.readRate }}%
                 </span>
-                <span class="chart-legend-item">
-                  <span class="chart-legend-dot chart-legend-dot--danger"></span>
-                  未读企业数
-                </span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="needFeedback" label="是否需反馈" width="110" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.needFeedback ? 'warning' : 'info'" size="small" effect="plain">
+                  {{ row.needFeedback ? '是' : '否' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="feedbackRate" label="反馈完成率" width="110" align="center">
+              <template #default="{ row }">
+                <template v-if="row.needFeedback && row.feedbackRate !== null">
+                  <span :style="{ color: getRateColor(row.feedbackRate), fontWeight: 'var(--font-weight-medium)' }">
+                    {{ row.feedbackRate }}%
+                  </span>
+                </template>
+                <template v-else>
+                  <span class="text-muted">-</span>
+                </template>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="160" fixed="right" align="center">
+              <template #default="{ row }">
+                <el-button type="primary" link size="small" @click="handleViewDetail(row)">
+                  详情
+                </el-button>
+                <el-button
+                  type="danger"
+                  link
+                  size="small"
+                  :disabled="row.unreadCount === 0"
+                  @click="handleUrge(row)"
+                >
+                  催办
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页 -->
+          <div class="pagination-bar">
+            <span class="pagination-total">共 {{ totalNotices }} 条</span>
+            <el-pagination
+              v-model:current-page="currentPage"
+              :page-size="pageSize"
+              :total="totalNotices"
+              layout="prev, pager, next"
+              background
+            />
+          </div>
+        </template>
+      </div>
+
+      <!-- ==================== 3.4 历史趋势分析 ==================== -->
+      <div class="section">
+        <h3 class="section-title">历史趋势分析</h3>
+
+        <el-row :gutter="16">
+          <!-- 折线图：通知数量 & 未读企业数变化 -->
+          <el-col :span="14">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">通知发布数量 & 未读企业数变化（按月）</span>
+                <div class="chart-legend">
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--primary"></span>
+                    通知数量
+                  </span>
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--danger"></span>
+                    未读企业数
+                  </span>
+                </div>
+              </div>
+              <div class="chart-body">
+                <svg :width="trendChartWidth" :height="trendChartHeight" viewBox="0 0 600 280" class="trend-svg">
+                  <!-- Y轴网格线 -->
+                  <line
+                    v-for="(tick, i) in noticeYAxisTicks"
+                    :key="'grid-' + i"
+                    :x1="trendPadding.left"
+                    :y1="trendPadding.top + (trendPlotHeight / 4) * i"
+                    :x2="trendChartWidth - trendPadding.right"
+                    :y2="trendPadding.top + (trendPlotHeight / 4) * i"
+                    stroke="var(--border-low)"
+                    stroke-width="1"
+                  />
+                  <!-- Y轴刻度 -->
+                  <text
+                    v-for="(tick, i) in noticeYAxisTicks"
+                    :key="'tick-' + i"
+                    :x="trendPadding.left - 8"
+                    :y="trendPadding.top + (trendPlotHeight / 4) * i + 5"
+                    text-anchor="end"
+                    class="chart-axis-text"
+                    fill="var(--text-muted)"
+                  >{{ tick }}</text>
+                  <!-- X轴标签 -->
+                  <text
+                    v-for="(d, i) in trendData"
+                    :key="'x-' + i"
+                    :x="trendPadding.left + (i / (trendData.length - 1)) * trendPlotWidth"
+                    :y="trendChartHeight - 8"
+                    text-anchor="middle"
+                    class="chart-axis-text"
+                    fill="var(--text-muted)"
+                  >{{ d.month.substring(5) }}月</text>
+                  <!-- 通知数量折线 -->
+                  <polyline
+                    :points="noticePoints.map(p => `${p.x},${p.y}`).join(' ')"
+                    fill="none"
+                    stroke="var(--color-primary)"
+                    stroke-width="2.5"
+                    stroke-linejoin="round"
+                  />
+                  <!-- 未读企业数折线 -->
+                  <polyline
+                    :points="unreadPoints.map(p => `${p.x},${p.y}`).join(' ')"
+                    fill="none"
+                    stroke="var(--color-danger)"
+                    stroke-width="2.5"
+                    stroke-linejoin="round"
+                    stroke-dasharray="6,3"
+                  />
+                  <!-- 数据点 & 标签 -->
+                  <g v-for="(p, i) in noticePoints" :key="'np-' + i">
+                    <circle :cx="p.x" :cy="p.y" r="4" fill="var(--color-primary)" stroke="var(--fill-surface)" stroke-width="2" />
+                    <text :x="p.x" :y="p.y - 12" text-anchor="middle" class="chart-point-label" fill="var(--color-primary)">{{ p.label }}</text>
+                  </g>
+                  <g v-for="(p, i) in unreadPoints" :key="'up-' + i">
+                    <circle :cx="p.x" :cy="p.y" r="4" fill="var(--color-danger)" stroke="var(--fill-surface)" stroke-width="2" />
+                    <text :x="p.x" :y="p.y - 12" text-anchor="middle" class="chart-point-label" fill="var(--color-danger)">{{ p.label }}</text>
+                  </g>
+                </svg>
               </div>
             </div>
-            <div class="chart-body">
-              <svg :width="trendChartWidth" :height="trendChartHeight" viewBox="0 0 600 280" class="trend-svg">
-                <!-- Y轴网格线 -->
-                <line
-                  v-for="(tick, i) in noticeYAxisTicks"
-                  :key="'grid-' + i"
-                  :x1="trendPadding.left"
-                  :y1="trendPadding.top + (trendPlotHeight / 4) * i"
-                  :x2="trendChartWidth - trendPadding.right"
-                  :y2="trendPadding.top + (trendPlotHeight / 4) * i"
-                  stroke="var(--border-low)"
-                  stroke-width="1"
-                />
-                <!-- Y轴刻度 -->
-                <text
-                  v-for="(tick, i) in noticeYAxisTicks"
-                  :key="'tick-' + i"
-                  :x="trendPadding.left - 8"
-                  :y="trendPadding.top + (trendPlotHeight / 4) * i + 5"
-                  text-anchor="end"
-                  class="chart-axis-text"
-                  fill="var(--text-muted)"
-                >{{ tick }}</text>
-                <!-- X轴标签 -->
-                <text
-                  v-for="(d, i) in trendData"
-                  :key="'x-' + i"
-                  :x="trendPadding.left + (i / (trendData.length - 1)) * trendPlotWidth"
-                  :y="trendChartHeight - 8"
-                  text-anchor="middle"
-                  class="chart-axis-text"
-                  fill="var(--text-muted)"
-                >{{ d.month.substring(5) }}月</text>
-                <!-- 通知数量折线 -->
-                <polyline
-                  :points="noticePoints.map(p => `${p.x},${p.y}`).join(' ')"
-                  fill="none"
-                  stroke="var(--color-primary)"
-                  stroke-width="2.5"
-                  stroke-linejoin="round"
-                />
-                <!-- 未读企业数折线 -->
-                <polyline
-                  :points="unreadPoints.map(p => `${p.x},${p.y}`).join(' ')"
-                  fill="none"
-                  stroke="var(--color-danger)"
-                  stroke-width="2.5"
-                  stroke-linejoin="round"
-                  stroke-dasharray="6,3"
-                />
-                <!-- 数据点 & 标签 -->
-                <g v-for="(p, i) in noticePoints" :key="'np-' + i">
-                  <circle :cx="p.x" :cy="p.y" r="4" fill="var(--color-primary)" stroke="var(--fill-surface)" stroke-width="2" />
-                  <text :x="p.x" :y="p.y - 12" text-anchor="middle" class="chart-point-label" fill="var(--color-primary)">{{ p.label }}</text>
-                </g>
-                <g v-for="(p, i) in unreadPoints" :key="'up-' + i">
-                  <circle :cx="p.x" :cy="p.y" r="4" fill="var(--color-danger)" stroke="var(--fill-surface)" stroke-width="2" />
-                  <text :x="p.x" :y="p.y - 12" text-anchor="middle" class="chart-point-label" fill="var(--color-danger)">{{ p.label }}</text>
-                </g>
-              </svg>
-            </div>
-          </div>
-        </el-col>
+          </el-col>
 
-        <!-- 各月平均已读率 -->
-        <el-col :span="10">
-          <div class="chart-panel">
-            <div class="chart-panel-header">
-              <span class="chart-panel-title">各月平均已读率</span>
-            </div>
-            <div class="chart-body">
-              <div class="rate-bar-list">
-                <div
-                  v-for="d in trendData"
-                  :key="d.month"
-                  class="rate-bar-item"
-                >
-                  <div class="rate-bar-header">
-                    <span class="rate-bar-month">{{ d.month.substring(5) }}月</span>
-                    <span
-                      class="rate-bar-value"
-                      :style="{ color: getRateColor(d.avgReadRate) }"
-                    >{{ d.avgReadRate }}%</span>
-                  </div>
-                  <div class="rate-bar-track">
-                    <div
-                      class="rate-bar-fill"
-                      :style="{
-                        width: d.avgReadRate + '%',
-                        background: getRateBarColor(d.avgReadRate),
-                      }"
-                    ></div>
+          <!-- 各月平均已读率 -->
+          <el-col :span="10">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">各月平均已读率</span>
+              </div>
+              <div class="chart-body">
+                <div class="rate-bar-list">
+                  <div
+                    v-for="d in trendData"
+                    :key="d.month"
+                    class="rate-bar-item"
+                  >
+                    <div class="rate-bar-header">
+                      <span class="rate-bar-month">{{ d.month.substring(5) }}月</span>
+                      <span
+                        class="rate-bar-value"
+                        :style="{ color: getRateColor(d.avgReadRate) }"
+                      >{{ d.avgReadRate }}%</span>
+                    </div>
+                    <div class="rate-bar-track">
+                      <div
+                        class="rate-bar-fill"
+                        :style="{
+                          width: d.avgReadRate + '%',
+                          background: getRateBarColor(d.avgReadRate),
+                        }"
+                      ></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </el-col>
-      </el-row>
+          </el-col>
+        </el-row>
 
-      <!-- 3.4.2 各企业历史已读率排名 -->
-      <el-row :gutter="16" style="margin-top: var(--spacing-16);">
-        <el-col :span="14">
-          <div class="chart-panel">
-            <div class="chart-panel-header">
-              <span class="chart-panel-title">各企业历史已读率排名（近30天）</span>
-            </div>
-            <div class="chart-body">
-              <svg :width="barChartWidth" :height="barChartHeight" viewBox="0 0 560 240" class="bar-svg">
-                <!-- Y轴网格线 -->
-                <line
-                  v-for="n in 5"
-                  :key="'bgrid-' + n"
-                  :x1="barPadding.left"
-                  :y1="barPadding.top + (barPlotHeight / 4) * (n - 1)"
-                  :x2="barChartWidth - barPadding.right"
-                  :y2="barPadding.top + (barPlotHeight / 4) * (n - 1)"
-                  stroke="var(--border-low)"
-                  stroke-width="1"
-                />
-                <!-- Y轴刻度 -->
-                <text
-                  v-for="n in 5"
-                  :key="'btick-' + n"
-                  :x="barPadding.left - 8"
-                  :y="barPadding.top + (barPlotHeight / 4) * (n - 1) + 5"
-                  text-anchor="end"
-                  class="chart-axis-text"
-                  fill="var(--text-muted)"
-                >{{ (100 - (n - 1) * 25) }}%</text>
-                <!-- 柱状图 -->
-                <g v-for="(item, i) in enterpriseRanking" :key="'bar-' + i">
-                  <rect
-                    :x="barPadding.left + barGap * i + (barGap - barWidth) / 2"
-                    :y="barPadding.top + barPlotHeight - (item.rate / 100) * barPlotHeight"
-                    :width="barWidth"
-                    :height="(item.rate / 100) * barPlotHeight"
-                    :rx="4"
-                    :fill="getRateBarColor(item.rate)"
-                    class="bar-rect"
+        <!-- 3.4.2 各企业历史已读率排名 -->
+        <el-row :gutter="16" class="ranking-row">
+          <el-col :span="14">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">各企业历史已读率排名（近30天）</span>
+              </div>
+              <div class="chart-body">
+                <svg :width="barChartWidth" :height="barChartHeight" viewBox="0 0 560 240" class="bar-svg">
+                  <!-- Y轴网格线 -->
+                  <line
+                    v-for="n in 5"
+                    :key="'bgrid-' + n"
+                    :x1="barPadding.left"
+                    :y1="barPadding.top + (barPlotHeight / 4) * (n - 1)"
+                    :x2="barChartWidth - barPadding.right"
+                    :y2="barPadding.top + (barPlotHeight / 4) * (n - 1)"
+                    stroke="var(--border-low)"
+                    stroke-width="1"
                   />
+                  <!-- Y轴刻度 -->
                   <text
-                    :x="barPadding.left + barGap * i + barGap / 2"
-                    :y="barPadding.top + barPlotHeight - (item.rate / 100) * barPlotHeight - 8"
-                    text-anchor="middle"
-                    class="chart-point-label"
-                    :fill="getRateColor(item.rate)"
-                  >{{ item.rate }}%</text>
-                  <text
-                    :x="barPadding.left + barGap * i + barGap / 2"
-                    :y="barChartHeight - 6"
-                    text-anchor="middle"
-                    class="chart-axis-text bar-label"
-                    fill="var(--text-secondary)"
-                  >{{ item.name }}</text>
-                </g>
-              </svg>
+                    v-for="n in 5"
+                    :key="'btick-' + n"
+                    :x="barPadding.left - 8"
+                    :y="barPadding.top + (barPlotHeight / 4) * (n - 1) + 5"
+                    text-anchor="end"
+                    class="chart-axis-text"
+                    fill="var(--text-muted)"
+                  >{{ (100 - (n - 1) * 25) }}%</text>
+                  <!-- 柱状图 -->
+                  <g v-for="(item, i) in enterpriseRanking" :key="'bar-' + i">
+                    <rect
+                      :x="barPadding.left + barGap * i + (barGap - barWidth) / 2"
+                      :y="barPadding.top + barPlotHeight - (item.rate / 100) * barPlotHeight"
+                      :width="barWidth"
+                      :height="(item.rate / 100) * barPlotHeight"
+                      :rx="4"
+                      :fill="getRateBarColor(item.rate)"
+                      class="bar-rect"
+                    />
+                    <text
+                      :x="barPadding.left + barGap * i + barGap / 2"
+                      :y="barPadding.top + barPlotHeight - (item.rate / 100) * barPlotHeight - 8"
+                      text-anchor="middle"
+                      class="chart-point-label"
+                      :fill="getRateColor(item.rate)"
+                    >{{ item.rate }}%</text>
+                    <text
+                      :x="barPadding.left + barGap * i + barGap / 2"
+                      :y="barChartHeight - 6"
+                      text-anchor="middle"
+                      class="chart-axis-text bar-label"
+                      fill="var(--text-secondary)"
+                    >{{ item.name }}</text>
+                  </g>
+                </svg>
+              </div>
             </div>
-          </div>
-        </el-col>
+          </el-col>
 
-        <!-- 企业排名表格 -->
-        <el-col :span="10">
-          <div class="chart-panel">
-            <div class="chart-panel-header">
-              <span class="chart-panel-title">企业已读率排名明细</span>
+          <!-- 企业排名表格 -->
+          <el-col :span="10">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">企业已读率排名明细</span>
+              </div>
+              <div class="chart-body chart-body--table">
+                <el-table :data="enterpriseRanking" stripe size="small" class="ranking-table">
+                  <el-table-column label="排名" width="60" align="center">
+                    <template #default="{ $index }">
+                      <span
+                        class="rank-badge"
+                        :class="{
+                          'rank-badge--gold': $index === 0,
+                          'rank-badge--silver': $index === 1,
+                          'rank-badge--bronze': $index === 2,
+                        }"
+                      >{{ $index + 1 }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="name" label="企业名称" min-width="100" />
+                  <el-table-column prop="rate" label="已读率" width="80" align="center">
+                    <template #default="{ row }">
+                      <span :style="{ color: getRateColor(row.rate), fontWeight: 'var(--font-weight-medium)' }">
+                        {{ row.rate }}%
+                      </span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="趋势" width="60" align="center">
+                    <template #default="{ row }">
+                      <span :style="{ color: getTrendColor(row.trend) }">
+                        <el-icon :size="14"><component :is="getTrendIcon(row.trend)" /></el-icon>
+                      </span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
             </div>
-            <div class="chart-body chart-body--table">
-              <el-table :data="enterpriseRanking" stripe size="small" class="ranking-table">
-                <el-table-column label="排名" width="60" align="center">
-                  <template #default="{ $index }">
-                    <span
-                      class="rank-badge"
-                      :class="{
-                        'rank-badge--gold': $index === 0,
-                        'rank-badge--silver': $index === 1,
-                        'rank-badge--bronze': $index === 2,
-                      }"
-                    >{{ $index + 1 }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="name" label="企业名称" min-width="100" />
-                <el-table-column prop="rate" label="已读率" width="80" align="center">
-                  <template #default="{ row }">
-                    <span :style="{ color: getRateColor(row.rate), fontWeight: 'var(--font-weight-medium)' }">
-                      {{ row.rate }}%
-                    </span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="趋势" width="60" align="center">
-                  <template #default="{ row }">
-                    <span :style="{ color: getTrendColor(row.trend), fontSize: 'var(--font-size-h4)' }">
-                      {{ getTrendIcon(row.trend) }}
-                    </span>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </div>
-        </el-col>
-      </el-row>
-    </div>
+          </el-col>
+        </el-row>
+      </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.news-center {
+/* ==================== 骨架屏 ==================== */
+.skeleton-section {
+  margin-bottom: var(--spacing-lg);
   padding: var(--spacing-lg);
-  background: var(--fill-page);
-  min-height: 100%;
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
 }
 
 /* ==================== 页面标题 ==================== */
@@ -864,6 +863,10 @@ const handleExport = () => {
   white-space: nowrap;
 }
 
+.filter-date-picker {
+  margin-left: var(--spacing-md);
+}
+
 /* ==================== Section 通用 ==================== */
 .section {
   margin-bottom: var(--spacing-lg);
@@ -891,86 +894,18 @@ const handleExport = () => {
   border-left: 4px solid var(--color-primary);
 }
 
-/* ==================== 统计卡片 ==================== */
+/* ==================== 搜索 & 发布人筛选 ==================== */
+.search-input {
+  width: 200px;
+}
+
+.publisher-select {
+  width: 140px;
+}
+
+/* ==================== 统计卡片区域 ==================== */
 .stats-row {
   margin-bottom: 0;
-}
-
-.stat-card {
-  background: var(--fill-surface);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-default);
-  padding: var(--spacing-lg) var(--spacing-md);
-  text-align: center;
-  min-height: 130px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: box-shadow 0.2s ease;
-}
-
-.stat-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.stat-card--highlight {
-  border-color: var(--color-warning-border);
-  background: var(--color-warning-bg);
-}
-
-.stat-card--ring {
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-card-value {
-  font-size: var(--font-size-h1);
-  font-weight: var(--font-weight-heavy);
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.stat-card-value--primary {
-  color: var(--color-primary);
-}
-
-.stat-card-value--success {
-  color: var(--color-success);
-}
-
-.stat-card-value--danger {
-  color: var(--color-danger);
-}
-
-.stat-card-value--warning {
-  color: var(--color-warning);
-}
-
-.stat-card-label {
-  font-size: var(--font-size-small);
-  color: var(--text-muted);
-  margin-top: var(--spacing-4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-/* 环形进度条 */
-.ring-chart-fill {
-  transition: stroke-dashoffset 0.6s ease;
-}
-
-.ring-chart-value {
-  font-size: var(--font-size-h3);
-  font-weight: var(--font-weight-heavy);
-}
-
-.ring-chart-label {
-  font-size: var(--font-size-xs);
 }
 
 /* ==================== 通知表格 ==================== */
@@ -991,6 +926,27 @@ const handleExport = () => {
 }
 
 .text-muted {
+  color: var(--text-muted);
+}
+
+/* ==================== 空状态 ==================== */
+.empty-state {
+  padding: var(--spacing-lg) 0;
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+}
+
+/* ==================== 分页 ==================== */
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md) 0;
+}
+
+.pagination-total {
+  font-size: var(--font-size-small);
   color: var(--text-muted);
 }
 
@@ -1053,11 +1009,11 @@ const handleExport = () => {
 }
 
 .chart-axis-text {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
 }
 
 .chart-point-label {
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
 }
 
@@ -1073,7 +1029,12 @@ const handleExport = () => {
 }
 
 .bar-label {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
+}
+
+/* 排名行间距 */
+.ranking-row {
+  margin-top: var(--spacing-16);
 }
 
 /* 已读率柱状条 */
@@ -1136,18 +1097,18 @@ const handleExport = () => {
 }
 
 .rank-badge--gold {
-  background: #FFD700;
-  color: #5D4037;
+  background: var(--color-warning);
+  color: var(--text-inverse);
 }
 
 .rank-badge--silver {
-  background: #C0C0C0;
-  color: #37474F;
+  background: var(--border-primary);
+  color: var(--text-primary);
 }
 
 .rank-badge--bronze {
-  background: #CD7F32;
-  color: #3E2723;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .ranking-table :deep(.el-table__header th) {
