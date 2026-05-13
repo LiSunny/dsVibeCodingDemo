@@ -415,21 +415,22 @@ const handleExport = () => {
                 :key="opt.value"
                 :label="opt.label"
                 :value="opt.value"
+                
               />
             </el-select>
           </div>
         </div>
         <el-row :gutter="16" class="stats-row">
-          <el-col :span="3">
+          <el-col class="stats-col">
             <StatsCard type="compact" :value="stats.totalNotices" label="通知总数" status="primary" />
           </el-col>
-          <el-col :span="3">
+          <el-col class="stats-col">
             <StatsCard type="compact" :value="stats.totalShouldRead" label="应读总人次" />
           </el-col>
-          <el-col :span="3">
+          <el-col class="stats-col">
             <StatsCard type="compact" :value="stats.totalRead" label="已读总人次" status="success" />
           </el-col>
-          <el-col :span="4">
+          <el-col class="stats-col">
             <StatsCard
               type="compact"
               :value="stats.readRate"
@@ -437,7 +438,7 @@ const handleExport = () => {
               :progress="stats.readRate"
             />
           </el-col>
-          <el-col :span="3">
+          <el-col class="stats-col">
             <StatsCard
               type="compact"
               :value="stats.totalUnread"
@@ -447,7 +448,7 @@ const handleExport = () => {
               tag-type="danger"
             />
           </el-col>
-          <el-col :span="4">
+          <el-col class="stats-col">
             <StatsCard
               type="compact"
               :value="stats.feedbackNotices"
@@ -457,7 +458,7 @@ const handleExport = () => {
               tag-type="warning"
             />
           </el-col>
-          <el-col :span="4">
+          <el-col class="stats-col" >
             <StatsCard
               type="compact"
               :value="stats.feedbackRate + '%'"
@@ -904,8 +905,15 @@ const handleExport = () => {
 }
 
 /* ==================== 统计卡片区域 ==================== */
+.time-range-select{
+  width: 120px;
+}
 .stats-row {
   margin-bottom: 0;
+  display: flex;
+}
+.stats-col {
+  flex: 1;
 }
 
 /* ==================== 通知表格 ==================== */

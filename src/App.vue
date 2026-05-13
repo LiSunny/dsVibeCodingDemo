@@ -153,7 +153,7 @@ const breadcrumb = computed(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--fill-page);
   min-width: 600px;
 }
@@ -179,10 +179,9 @@ const breadcrumb = computed(() => {
 }
 
 .main-content {
+  flex: 1;
+  overflow-y: auto;
   padding: var(--spacing-md);
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
   background-color: var(--fill-page);
 }
 </style>

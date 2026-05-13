@@ -7,6 +7,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import StatsCard from '@/components/StatsCard.vue'
+import SysButton from '@/components/SysButton.vue'
 import {
   Monitor, User, View, Timer, Warning, DataLine,
   Document, CircleCheck, CircleClose,
@@ -398,9 +399,9 @@ const getEventTypeBg = (type) => {
         </div>
       </div>
 
-      <!-- ==================== 快捷入口 ==================== -->
+      <!-- ==================== 快捷入口（SysButton 组件演示） ==================== -->
       <div class="quick-links">
-        <el-button
+        <SysButton
           v-for="item in [
             { label: '通知公告', path: '/news' },
             { label: '应急预警', path: '/alerts' },
@@ -411,11 +412,11 @@ const getEventTypeBg = (type) => {
           ]"
           :key="item.path"
           type="default"
-          class="quick-link-btn"
+          size="small"
           @click="router.push(item.path)"
         >
           {{ item.label }}
-        </el-button>
+        </SysButton>
       </div>
     </template>
   </div>
@@ -856,9 +857,6 @@ const getEventTypeBg = (type) => {
   padding: var(--spacing-md);
 }
 
-.quick-link-btn {
-  font-size: var(--font-size-small);
-}
 
 /* ==================== 响应式 ==================== */
 @media (max-width: 1024px) {

@@ -20,11 +20,13 @@ description = 编写或修改任何 Vue/JS 代码时
 files =
   rules/coding-standards.md
   rules/layout_standards.md
+  rules/sys-button-usage.md
 rules =
   - 遵循文件命名规范（PascalCase / camelCase / kebab-case）
   - 遵循 Vue SFC 结构规范（script setup → template → style scoped）
   - 遵循 Composition API 使用原则
   - Element Plus 组件无需手动 import，API 方法需要 import
+  - 所有按钮使用 SysButton 组件，禁止直接使用 el-button
 
 [scenario:write_style]
 # 编写样式
@@ -52,11 +54,13 @@ files =
   rules/coding-standards.md
   rules/style-standards.md
   rules/layout_standards.md
+  rules/sys-button-usage.md
 rules =
   - 检查命名是否规范
   - 检查 Vue SFC 结构顺序
   - 检查样式作用域是否正确
   - 检查是否有硬编码值
+  - 检查按钮是否使用 SysButton 而非 el-button
 
 [scenario:create_component]
 # 新建组件
@@ -65,11 +69,13 @@ files =
   rules/coding-standards.md
   rules/style-standards.md
   rules/layout_standards.md
+  rules/sys-button-usage.md
 rules =
   - 文件使用 PascalCase 命名
   - 结构：script setup → template → style scoped
   - 类名使用 kebab-case
   - 组件顶部添加用途注释
+  - 组件内按钮使用 SysButton，不用 el-button
 
 [scenario:refactor]
 # 重构代码
@@ -78,11 +84,13 @@ files =
   rules/coding-standards.md
   rules/style-standards.md
   rules/layout_standards.md
+  rules/sys-button-usage.md
 rules =
   - 保持 SFC 块级顺序
   - 优先使用 Composition API
   - 抽取可复用逻辑到 composables/
   - 不改变外部行为（重构不修 Bug）
+  - 将 el-button 替换为 SysButton
 
 [scenario:setup_project]
 # 项目初始化 / 配置
