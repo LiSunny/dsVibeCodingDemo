@@ -71,7 +71,7 @@ const modules = ref([
       { label: 'AI准确率', value: '94%', type: 'ring', ringVal: 94 },
       { label: '今日新增', value: 6, color: 'warning' },
     ],
-    link: '/home',
+    link: '/ai-warning',
   },
   {
     id: 4,

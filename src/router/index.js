@@ -35,6 +35,21 @@ const routes = [
     name: 'RiskMonitorItem',
     component: () => import('@/views/RiskMonitorItem.vue'),
   },
+  {
+    path: '/ai-warning',
+    name: 'AiWarning',
+    component: () => import('@/views/AiWarning.vue'),
+  },
+  {
+    path: '/ai-warning/detail',
+    name: 'AiWarningDetail',
+    component: () => import('@/views/AiWarningDetail.vue'),
+  },
+  {
+    path: '/ai-warning/detail/:id',
+    name: 'AiWarningItem',
+    component: () => import('@/views/AiWarningItem.vue'),
+  },
 ]
 
 const router = createRouter({

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, Search } from '@element-plus/icons-vue'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import StatsCard from '@/components/StatsCard.vue'
 import SysTable from '@/components/SysTable.vue'
 import SysButton from '@/components/SysButton.vue'
@@ -10,6 +10,10 @@ import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
 const route = useRoute()
+
+// ==================== 加载状态 ====================
+const pageLoading = ref(true)
+setTimeout(() => { pageLoading.value = false }, 600)
 
 // ============================================================
 // 筛选器状态
@@ -266,93 +270,92 @@ const getRemainType = (row) => {
       back-path="/risk-monitor"
     />
 
+    <!-- ==================== 骨架屏加载 ==================== -->
+    <template v-if="pageLoading">
+      <el-skeleton :rows="5" animated class="skeleton-section" />
+      <el-skeleton :rows="8" animated class="skeleton-section" />
+    </template>
+
+    <template v-else>
     <!-- ============================================================ -->
-    <!-- 筛选器 -->
+    <!-- 3.1 综合统计看板 -->
     <!-- ============================================================ -->
-    <div class="filter-bar">
-      <div class="filter-group">
-        <span class="filter-label">时间范围：</span>
-        <el-radio-group v-model="timeRange" size="small">
-          <el-radio-button v-for="opt in timeOptions" :key="opt.value" :value="opt.value">
-            {{ opt.label }}
-          </el-radio-button>
-        </el-radio-group>
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title">综合统计看板</h3>
+        <div class="section-header-filter">
+          <el-select v-model="timeRange" size="small" class="time-range-select">
+            <el-option v-for="opt in timeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+        </div>
       </div>
-      <div class="filter-group">
+      <el-row :gutter="16" class="stats-row">
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="totalCount" label="隐患总数" status="primary" />
+        </el-col>
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="unfixedCount" label="未整改数" status="warning" />
+        </el-col>
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="fixedCount" label="已整改数" status="success" />
+        </el-col>
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="fixRate" label="整体整改率" :progress="fixRate" />
+        </el-col>
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="overdueCount" label="超期未改数" status="danger" tag="超期" tag-type="danger" />
+        </el-col>
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="avgFixDays" label="平均整改时长(天)" status="primary" tag="仅已整改" tag-type="info" />
+        </el-col>
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="overdueRate + '%'" label="超期率" status="danger" :progress="overdueRate" tag="超期/未改" tag-type="danger" />
+        </el-col>
+        <el-col class="stats-col">
+          <StatsCard type="compact" :value="highRiskRate + '%'" label="高风险隐患占比" status="danger" :progress="Math.round(Number(highRiskRate))" tag="高/总数" tag-type="danger" />
+        </el-col>
+      </el-row>
+    </div>
+
+    
+
+    <!-- ============================================================ -->
+    <!-- 3.2 隐患列表 -->
+    <!-- ============================================================ -->
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title">隐患列表（{{ totalCount }} 条）</h3>
+        <div class="filter-group">
         <span class="filter-label">状态：</span>
         <el-select v-model="statusFilter" size="small" style="width: 120px">
           <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
       </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- 3.1 综合统计看板 -->
-    <!-- ============================================================ -->
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="4">
-        <StatsCard type="compact" :value="totalCount" label="隐患总数" status="primary" />
-      </el-col>
-      <el-col :span="4">
-        <StatsCard type="compact" :value="unfixedCount" label="未整改数" status="warning" />
-      </el-col>
-      <el-col :span="4">
-        <StatsCard type="compact" :value="fixedCount" label="已整改数" status="success" />
-      </el-col>
-      <el-col :span="4">
-        <StatsCard type="compact" :value="fixRate" label="整体整改率" :progress="fixRate" />
-      </el-col>
-      <el-col :span="4">
-        <StatsCard type="compact" :value="overdueCount" label="超期未改数" status="danger" :progress="overdueRate" tag="超期" tag-type="danger" />
-      </el-col>
-      <el-col :span="4">
-        <StatsCard type="compact" :value="avgFixDays" label="平均整改时长(天)" status="primary" :progress="Math.min(100, Math.round((Number(avgFixDays) || 0) / 15 * 100))" tag="仅已整改" tag-type="info" />
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="24" class="stats-row" style="margin-top: 8px">
-      <el-col :span="12">
-        <StatsCard type="compact" :value="overdueRate + '%'" label="超期率" status="danger" :progress="overdueRate" tag="超期/未改" tag-type="danger" />
-      </el-col>
-      <el-col :span="12">
-        <StatsCard type="compact" :value="highRiskRate + '%'" label="高风险隐患占比" status="danger" :progress="Math.round(Number(highRiskRate))" tag="高/总数" tag-type="danger" />
-      </el-col>
-    </el-row>
-
-    <!-- ============================================================ -->
-    <!-- 3.2 隐患列表 -->
-    <!-- ============================================================ -->
-    <div class="section-card">
-      <div class="section-header">
-        <h2>隐患列表（{{ totalCount }} 条）</h2>
       </div>
+    
       <SysTable
         :data="computedTable"
         :columns="tableColumns"
-        :pagination="true"
+        stripe
+        :pagination="{ layout: 'total, prev, pager, next', pageSize: pageSize }"
         :total="totalCount"
         v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
       >
         <template #level="{ row }">
-          <el-tag
+          <SysTag
             :type="row.level === '高' ? 'danger' : row.level === '中' ? 'warning' : 'info'"
             size="small"
-            effect="dark"
           >
             {{ row.level }}
-          </el-tag>
+          </SysTag>
         </template>
         <template #status="{ row }">
-          <el-tag
+          <SysTag
             :type="row.status === '已整改' ? 'success' : row.status === '超期' ? 'danger' : 'warning'"
             size="small"
-            effect="dark"
           >
             {{ row.status }}
-          </el-tag>
+          </SysTag>
         </template>
         <template #remain="{ row }">
           <SysTag v-if="row.status !== '已整改'" :type="getRemainType(row)">
@@ -361,13 +364,14 @@ const getRemainType = (row) => {
           <span v-else class="text-muted">—</span>
         </template>
         <template #action="{ row }">
-          <SysButton type="primary" size="small" @click="handleViewItem(row)">
+          <SysButton variant="ghost" type="primary" size="small" @click="handleViewItem(row)">
             详情
           </SysButton>
           <SysButton
             v-if="row.status !== '已整改'"
             type="danger"
             size="small"
+            variant="ghost"
             @click="handleUrge(row)"
             style="margin-left: 4px"
           >
@@ -461,6 +465,7 @@ const getRemainType = (row) => {
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
@@ -512,15 +517,31 @@ const getRemainType = (row) => {
   white-space: nowrap;
 }
 
+/* ==================== 骨架屏 ==================== */
+.skeleton-section {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+}
+
 /* ============================================================
  * 统计行
  * ============================================================ */
 .stats-row {
   margin-bottom: 0;
+  display: flex;
+}
+.stats-col {
+  flex: 1;
+}
+
+.time-range-select {
+  width: 120px;
 }
 
 /* ============================================================
- * 区块卡片
+ * 区块卡片（非列表区域的其他区块）
  * ============================================================ */
 .section-card {
   background: var(--fill-surface);
@@ -542,6 +563,26 @@ const getRemainType = (row) => {
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
   margin: 0;
+}
+
+/* ============================================================
+ * 列表区域（对齐 list-area-standards 规范）
+ * ============================================================ */
+.section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section > .section-header {
+  margin-bottom: var(--spacing-md);
+}
+
+.section-title {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+  padding-left: var(--spacing-md);
+  border-left: 4px solid var(--color-primary);
 }
 
 .text-muted {

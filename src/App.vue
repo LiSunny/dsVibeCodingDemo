@@ -41,6 +41,7 @@ const breadcrumb = computed(() => {
     home: '首页',
     news: '石楼动态资讯',
     'risk-monitor': '隐患舆情监测',
+    'ai-warning': '安消应AI预警',
     detail: '专题分析',
   }
   return parts.map((p) => map[p] || p).join(' / ')
@@ -77,6 +78,10 @@ const breadcrumb = computed(() => {
           <el-menu-item index="/risk-monitor">
             <el-icon><Icon icon="mdi:alert-outline" /></el-icon>
             <span>隐患舆情监测</span>
+          </el-menu-item>
+          <el-menu-item index="/ai-warning">
+            <el-icon><Icon icon="mdi:robot" /></el-icon>
+            <span>安消应AI预警</span>
           </el-menu-item>
         </el-menu>
       </nav>
