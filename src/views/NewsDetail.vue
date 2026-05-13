@@ -9,6 +9,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft, Edit, Delete, Clock, View, Check, Close, WarningFilled
 } from '@element-plus/icons-vue'
+import SysButton from '@/components/SysButton.vue'
+import SysTable from '@/components/SysTable.vue'
+import SysTag from '@/components/SysTag.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -105,6 +108,37 @@ const handleUrge = () => {
   }).catch(() => {})
 }
 
+// ==================== 已读企业表格列配置 ====================
+const readerColumns = [
+  { prop: 'name', label: '企业名称', minWidth: 160 },
+  { prop: 'contact', label: '联系人', width: 100 },
+  { prop: 'phone', label: '联系电话', width: 130 },
+  { prop: 'readTime', label: '阅读时间', width: 170 },
+  { prop: 'duration', label: '停留时长', width: 100, align: 'center' },
+  { prop: 'needFeedback', label: '需反馈', width: 80, align: 'center', slot: 'needFeedback' },
+  { prop: 'hasFeedback', label: '反馈状态', width: 120, align: 'center', slot: 'hasFeedback' },
+  { prop: 'feedbackTime', label: '反馈时间', width: 170 },
+]
+
+// ==================== 反馈跟踪表格列配置 ====================
+const feedbackColumns = [
+  { prop: 'enterprise', label: '企业名称', minWidth: 150 },
+  { prop: 'status', label: '反馈状态', width: 100, align: 'center', slot: 'feedbackStatus' },
+  { prop: 'content', label: '反馈内容', minWidth: 250, slot: 'feedbackContent' },
+  { prop: 'feedbackTime', label: '反馈时间', width: 170 },
+  { prop: 'auditor', label: '审核人', width: 100 },
+  { prop: 'auditResult', label: '审核结果', width: 100, align: 'center', slot: 'auditResult' },
+  { prop: 'auditComment', label: '审核意见', minWidth: 200, showOverflowTooltip: true },
+]
+
+// ==================== 已读企业分页 ====================
+const readerCurrentPage = ref(1)
+const readerPageSize = ref(10)
+
+// ==================== 反馈跟踪分页 ====================
+const feedbackCurrentPage = ref(1)
+const feedbackPageSize = ref(10)
+
 // ==================== 获取状态标签 ====================
 const getStatusType = (status) => {
   if (status === 'completed') return 'success'
@@ -128,19 +162,16 @@ const getStatusText = (status) => {
     <template v-else>
       <!-- ==================== 顶部操作栏 ==================== -->
       <div class="top-actions">
-        <el-button type="default" link @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
+        <SysButton type="default" variant="ghost" :icon="ArrowLeft" @click="router.back()">
           返回列表
-        </el-button>
+        </SysButton>
         <div class="top-actions-right">
-          <el-button type="primary" plain>
-            <el-icon><Edit /></el-icon>
+          <SysButton type="primary" variant="outline" :icon="Edit">
             编辑通知
-          </el-button>
-          <el-button type="danger" plain>
-            <el-icon><Delete /></el-icon>
+          </SysButton>
+          <SysButton type="danger" variant="outline" :icon="Delete">
             删除
-          </el-button>
+          </SysButton>
         </div>
       </div>
 
@@ -160,15 +191,15 @@ const getStatusText = (status) => {
               <span class="meta-divider">|</span>
               <span class="meta-item">发布人：{{ noticeData.publisher }}</span>
               <span class="meta-divider">|</span>
-              <el-tag type="danger" size="small" effect="dark">高优先级</el-tag>
+              <SysTag type="danger" size="small" variant="solid">高优先级</SysTag>
               <span class="meta-divider">|</span>
-              <el-tag
+              <SysTag
                 v-for="tag in noticeData.tags"
                 :key="tag"
                 size="small"
-                effect="plain"
+                variant="outline"
                 class="meta-tag"
-              >{{ tag }}</el-tag>
+              >{{ tag }}</SysTag>
             </div>
           </div>
         </div>
@@ -186,9 +217,9 @@ const getStatusText = (status) => {
           <div class="stat-item">
             <span class="stat-value stat-value--danger">{{ noticeData.unreadCount }}</span>
             <span class="stat-label">未读企业</span>
-            <el-button type="danger" size="small" :disabled="noticeData.unreadCount === 0" @click="handleUrge" class="stat-urge-btn">
+            <SysButton type="danger" size="small" :disabled="noticeData.unreadCount === 0" @click="handleUrge" class="stat-urge-btn">
               催办
-            </el-button>
+            </SysButton>
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item">
@@ -230,7 +261,7 @@ const getStatusText = (status) => {
             <div class="field-item">
               <span class="field-label">通知分类</span>
               <span class="field-value">
-                <el-tag type="danger" size="small">{{ noticeData.category }}</el-tag>
+                <SysTag type="danger" size="small" variant="solid">{{ noticeData.category }}</SysTag>
               </span>
             </div>
             <div class="field-item">
@@ -244,9 +275,9 @@ const getStatusText = (status) => {
             <div class="field-item">
               <span class="field-label">要求反馈</span>
               <span class="field-value">
-                <el-tag :type="noticeData.needFeedback ? 'warning' : 'info'" size="small">
+                <SysTag size="small" :type="noticeData.needFeedback ? 'warning' : 'info'" variant="solid">
                   {{ noticeData.needFeedback ? '是' : '否' }}
-                </el-tag>
+                </SysTag>
               </span>
             </div>
             <div class="field-item" v-if="noticeData.needFeedback">
@@ -284,7 +315,7 @@ const getStatusText = (status) => {
               >
                 <span class="attachment-name">{{ file.name }}</span>
                 <span class="attachment-size">{{ file.size }}</span>
-                <el-button type="primary" link size="small">下载</el-button>
+                <SysButton type="primary" variant="ghost" size="small">下载</SysButton>
               </div>
             </div>
           </div>
@@ -297,39 +328,35 @@ const getStatusText = (status) => {
             <h3 class="content-card-title">
               已读企业（{{ readerList.length }}/{{ noticeData.targetCount }}）
             </h3>
-            <el-empty v-if="readerList.length === 0" description="暂无已读企业" />
-            <el-table v-else :data="readerList" stripe class="reader-table">
-              <el-table-column prop="name" label="企业名称" min-width="160" />
-              <el-table-column prop="contact" label="联系人" width="100" />
-              <el-table-column prop="phone" label="联系电话" width="130" />
-              <el-table-column prop="readTime" label="阅读时间" width="170" />
-              <el-table-column prop="duration" label="停留时长" width="100" align="center" />
-              <el-table-column prop="needFeedback" label="需反馈" width="80" align="center">
-                <template #default="{ row }">
-                  <el-icon v-if="row.needFeedback" color="var(--color-warning)"><WarningFilled /></el-icon>
-                  <span v-else style="color: var(--text-muted)">-</span>
+            <SysTable
+              :data="readerList"
+              :columns="readerColumns"
+              stripe
+              :pagination="{ pageSize: readerPageSize }"
+              v-model:current-page="readerCurrentPage"
+              v-model:page-size="readerPageSize"
+            >
+              <template #needFeedback="{ row }">
+                <el-icon v-if="row.needFeedback" color="var(--color-warning)"><WarningFilled /></el-icon>
+                <span v-else style="color: var(--text-muted)">-</span>
+              </template>
+              <template #hasFeedback="{ row }">
+                <template v-if="!row.needFeedback">
+                  <span style="color: var(--text-muted)">-</span>
                 </template>
-              </el-table-column>
-              <el-table-column prop="hasFeedback" label="反馈状态" width="120" align="center">
-                <template #default="{ row }">
-                  <template v-if="!row.needFeedback">
-                    <span style="color: var(--text-muted)">-</span>
-                  </template>
-                  <template v-else>
-                    <el-tag
-                      :type="row.hasFeedback ? 'success' : 'warning'"
-                      size="small"
-                      effect="plain"
-                    >
-                      <el-icon v-if="row.hasFeedback" :size="12"><Check /></el-icon>
-                      <el-icon v-else :size="12"><Close /></el-icon>
-                      {{ row.hasFeedback ? '已反馈' : '待反馈' }}
-                    </el-tag>
-                  </template>
+                <template v-else>
+                  <SysTag
+                    :type="row.hasFeedback ? 'success' : 'warning'"
+                    size="small"
+                    variant="outline"
+                  >
+                    <el-icon v-if="row.hasFeedback" :size="12"><Check /></el-icon>
+                    <el-icon v-else :size="12"><Close /></el-icon>
+                    {{ row.hasFeedback ? '已反馈' : '待反馈' }}
+                  </SysTag>
                 </template>
-              </el-table-column>
-              <el-table-column prop="feedbackTime" label="反馈时间" width="170" />
-            </el-table>
+              </template>
+            </SysTable>
           </div>
 
           <!-- 未读企业 -->
@@ -349,7 +376,7 @@ const getStatusText = (status) => {
                   <span class="unread-item-name">{{ item.name }}</span>
                   <span class="unread-item-contact">{{ item.contact }} · {{ item.phone }}</span>
                 </div>
-                <el-tag type="danger" size="small" effect="plain">未读</el-tag>
+                <SysTag type="danger" size="small" variant="outline">未读</SysTag>
               </div>
             </div>
           </div>
@@ -359,44 +386,40 @@ const getStatusText = (status) => {
         <div v-if="activeTab === 'feedback'" class="tab-pane">
           <div class="content-card">
             <h3 class="content-card-title">反馈跟踪明细</h3>
-            <el-empty v-if="feedbackList.length === 0" description="暂无反馈数据" />
-            <el-table v-else :data="feedbackList" stripe class="feedback-table">
-              <el-table-column prop="enterprise" label="企业名称" min-width="150" />
-              <el-table-column prop="status" label="反馈状态" width="100" align="center">
-                <template #default="{ row }">
-                  <el-tag
-                    :type="getStatusType(row.status)"
+            <SysTable
+              :data="feedbackList"
+              :columns="feedbackColumns"
+              stripe
+              :pagination="{ pageSize: feedbackPageSize }"
+              v-model:current-page="feedbackCurrentPage"
+              v-model:page-size="feedbackPageSize"
+            >
+              <template #feedbackStatus="{ row }">
+                <SysTag
+                  :type="getStatusType(row.status)"
+                  size="small"
+                  variant="outline"
+                >
+                  {{ getStatusText(row.status) }}
+                </SysTag>
+              </template>
+              <template #feedbackContent="{ row }">
+                <span v-if="row.content">{{ row.content }}</span>
+                <span v-else style="color: var(--text-muted)">-</span>
+              </template>
+              <template #auditResult="{ row }">
+                <template v-if="row.auditResult">
+                  <SysTag
+                    :type="row.auditResult === '通过' ? 'success' : 'warning'"
                     size="small"
-                    effect="plain"
+                    variant="outline"
                   >
-                    {{ getStatusText(row.status) }}
-                  </el-tag>
+                    {{ row.auditResult }}
+                  </SysTag>
                 </template>
-              </el-table-column>
-              <el-table-column prop="content" label="反馈内容" min-width="250" show-overflow-tooltip>
-                <template #default="{ row }">
-                  <span v-if="row.content">{{ row.content }}</span>
-                  <span v-else style="color: var(--text-muted)">-</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="feedbackTime" label="反馈时间" width="170" />
-              <el-table-column prop="auditor" label="审核人" width="100" />
-              <el-table-column prop="auditResult" label="审核结果" width="100" align="center">
-                <template #default="{ row }">
-                  <template v-if="row.auditResult">
-                    <el-tag
-                      :type="row.auditResult === '通过' ? 'success' : 'warning'"
-                      size="small"
-                      effect="plain"
-                    >
-                      {{ row.auditResult }}
-                    </el-tag>
-                  </template>
-                  <span v-else style="color: var(--text-muted)">-</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="auditComment" label="审核意见" min-width="200" show-overflow-tooltip />
-            </el-table>
+                <span v-else style="color: var(--text-muted)">-</span>
+              </template>
+            </SysTable>
           </div>
         </div>
       </div>
@@ -681,19 +704,6 @@ const getStatusText = (status) => {
   color: var(--text-muted);
 }
 
-/* 表格 */
-.reader-table,
-.feedback-table {
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.reader-table :deep(.el-table__header th),
-.feedback-table :deep(.el-table__header th) {
-  background: var(--fill-surface);
-  color: var(--text-primary);
-  font-weight: var(--font-weight-medium);
-}
 
 /* 未读企业网格 */
 .unread-grid {

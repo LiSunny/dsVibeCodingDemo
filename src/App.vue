@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Fold, Expand } from '@element-plus/icons-vue'
+import { Icon } from '@iconify/vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -11,6 +11,23 @@ const isCollapsed = ref(false)
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
+
+// 深色 / 浅色模式切换
+const isDark = ref(false)
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+
+onMounted(() => {
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  }
+})
 
 // 面包屑
 const handleSelect = (index) => {
@@ -23,6 +40,8 @@ const breadcrumb = computed(() => {
   const map = {
     home: '首页',
     news: '石楼动态资讯',
+    'risk-monitor': '隐患舆情监测',
+    detail: '专题分析',
   }
   return parts.map((p) => map[p] || p).join(' / ')
 })
@@ -35,30 +54,29 @@ const breadcrumb = computed(() => {
       <div class="sidebar-header">
         <div class="logo">石楼平台</div>
         <button class="collapse-btn" @click="toggleCollapse">
-          <el-icon :size="20">
-            <Fold v-if="!isCollapsed" />
-            <Expand v-else />
-          </el-icon>
+          <Icon icon="mdi:menu-open" :width="20" v-if="!isCollapsed" />
+          <Icon icon="mdi:menu" :width="20" v-else />
         </button>
       </div>
       <nav class="sidebar-nav">
         <el-menu
           :default-active="route.path"
           class="sidebar-menu"
-          background-color="var(--sidebar-bg)"
-          text-color="var(--sidebar-text)"
-          active-text-color="var(--sidebar-active)"
           :collapse="isCollapsed"
           router
           @select="handleSelect"
         >
           <el-menu-item index="/home">
-            <el-icon><HomeFilled /></el-icon>
+            <el-icon><Icon icon="mdi:home" /></el-icon>
             <span>首页</span>
           </el-menu-item>
           <el-menu-item index="/news">
-            <el-icon><DataAnalysis /></el-icon>
+            <el-icon><Icon icon="mdi:newspaper-variant-outline" /></el-icon>
             <span>石楼动态资讯</span>
+          </el-menu-item>
+          <el-menu-item index="/risk-monitor">
+            <el-icon><Icon icon="mdi:alert-outline" /></el-icon>
+            <span>隐患舆情监测</span>
           </el-menu-item>
         </el-menu>
       </nav>
@@ -68,7 +86,12 @@ const breadcrumb = computed(() => {
     <main class="layout-main">
       <header class="main-header">
         <div class="breadcrumb">首页 / {{ breadcrumb }}</div>
-        <div class="user-info">值班员：管理员</div>
+        <div class="header-right">
+          <div class="user-info">值班员：管理员</div>
+          <button class="theme-toggle-btn" @click="toggleTheme" :title="isDark ? '切换浅色模式' : '切换深色模式'">
+            <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:weather-night'" :width="18" />
+          </button>
+        </div>
       </header>
       <div class="main-content">
         <router-view />
@@ -114,7 +137,7 @@ const breadcrumb = computed(() => {
 .logo {
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-medium);
-  color: var(--text-inverse);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -134,7 +157,7 @@ const breadcrumb = computed(() => {
 }
 
 .collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--text-inverse);
 }
 
 .sidebar-nav {
@@ -144,6 +167,10 @@ const breadcrumb = computed(() => {
 
 .sidebar-menu {
   border-right: none !important;
+  --el-menu-bg-color: var(--sidebar-bg);
+  --el-menu-text-color: var(--sidebar-text);
+  --el-menu-active-color: var(--sidebar-active);
+  --el-menu-hover-bg-color: var(--sidebar-hover-bg);
 }
 
 /* ============================================================
@@ -171,6 +198,33 @@ const breadcrumb = computed(() => {
 .breadcrumb {
   font-size: var(--font-size-small);
   color: var(--text-secondary);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--fill-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--fill-hover);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .user-info {

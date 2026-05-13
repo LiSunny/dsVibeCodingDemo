@@ -59,7 +59,7 @@ const modules = ref([
       { label: '超期未整改', value: 4, color: 'danger', tag: '严重超期' },
       { label: '整改率', value: '72%', type: 'ring', ringVal: 72 },
     ],
-    link: '/home',
+    link: '/risk-monitor',
   },
   {
     id: 3,
@@ -413,9 +413,9 @@ const overviewStats = computed(() => {
   align-items: center;
   margin-bottom: var(--spacing-md);
   padding: var(--spacing-16) var(--spacing-24);
-  background: var(--sidebar-bg);
+  background: var(--fill-surface);
   border-radius: var(--radius-lg);
-  color: var(--text-inverse);
+  color: var(--text-primary);
   flex-wrap: wrap;
   gap: var(--spacing-12);
 }
@@ -533,15 +533,14 @@ const overviewStats = computed(() => {
  * 模块卡片
  * ============================================================ */
 .module-card {
-  background: var(--fill-surface);
+  background: var(--fill-secondary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: var(--spacing-16);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-12);
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
-  border: 1px solid var(--border-low);
+  border: 1px solid var(--border-primary);
   min-height: 180px;
 }
 
@@ -675,7 +674,7 @@ const overviewStats = computed(() => {
 
 /* ---- 底部链接 ---- */
 .card-footer {
-  border-top: 1px solid var(--border-low);
+  border-top: 1px solid var(--border-default);
   padding-top: var(--spacing-8);
 }
 

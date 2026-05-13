@@ -11,6 +11,10 @@ import {
   Search
 } from '@element-plus/icons-vue'
 import StatsCard from '@/components/StatsCard.vue'
+import SysButton from '@/components/SysButton.vue'
+import SysTable from '@/components/SysTable.vue'
+import SysTag from '@/components/SysTag.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
 
@@ -196,9 +200,9 @@ const noticeList = ref([
     publishTime: '2026-04-10',
     publisher: '卫健办',
     targetCount: 28,
-    readCount: 24,
-    unreadCount: 4,
-    readRate: 85.7,
+    readCount: 28,
+    unreadCount: 0,
+    readRate: 100,
     needFeedback: true,
     feedbackRate: 70,
   },
@@ -208,9 +212,9 @@ const noticeList = ref([
     publishTime: '2026-01-20',
     publisher: '应急办',
     targetCount: 45,
-    readCount: 41,
-    unreadCount: 4,
-    readRate: 91.1,
+    readCount: 45,
+    unreadCount: 0,
+    readRate: 100,
     needFeedback: false,
     feedbackRate: null,
   },
@@ -375,6 +379,28 @@ const barPlotHeight = barChartHeight - barPadding.top - barPadding.bottom
 const barWidth = computed(() => Math.min(48, (barPlotWidth / enterpriseRanking.value.length) * 0.6))
 const barGap = computed(() => barPlotWidth / enterpriseRanking.value.length)
 
+// ==================== 通知列表列配置 ====================
+const noticeColumns = [
+  { prop: 'title', label: '通知标题', minWidth: 220, showOverflowTooltip: true },
+  { prop: 'publishTime', label: '发布时间', width: 120, sortable: 'custom' },
+  { prop: 'publisher', label: '发布人', width: 100 },
+  { prop: 'targetCount', label: '目标企业数', width: 110, sortable: 'custom', align: 'center' },
+  { prop: 'readCount', label: '已读数', width: 80, sortable: 'custom', align: 'center' },
+  { prop: 'unreadCount', label: '未读数', width: 80, sortable: 'custom', align: 'center', slot: 'unreadCount' },
+  { prop: 'readRate', label: '已读率', width: 100, sortable: 'custom', align: 'center', slot: 'readRate' },
+  { prop: 'needFeedback', label: '是否需反馈', width: 110, align: 'center', slot: 'needFeedback' },
+  { prop: 'feedbackRate', label: '反馈完成率', width: 110, align: 'center', slot: 'feedbackRate' },
+  { prop: 'actions', label: '操作', width: 160, align: 'center', slot: 'actions', fixed: 'right' },
+]
+
+// ==================== 企业排名表列配置 ====================
+const rankingColumns = [
+  { prop: 'rank', label: '排名', width: 60, align: 'center', slot: 'rank' },
+  { prop: 'name', label: '企业名称', minWidth: 100 },
+  { prop: 'rate', label: '已读率', width: 80, align: 'center', slot: 'rate' },
+  { prop: 'trend', label: '趋势', width: 60, align: 'center', slot: 'trend' },
+]
+
 // ==================== 导出 ====================
 const handleExport = () => {
   ElMessage.success('导出功能开发中，即将支持导出为Excel格式')
@@ -384,18 +410,13 @@ const handleExport = () => {
 <template>
   <div class="page-content">
     <!-- ==================== 页面标题 ==================== -->
-    <div class="page-header">
-      <div class="page-header-left">
-        <h2 class="page-title">石楼动态资讯</h2>
-        <span class="page-breadcrumb">通知下发 → 阅读 → 反馈 → 催办 闭环管理</span>
-      </div>
-      <div class="page-header-right">
-        <el-button type="default" @click="router.push('/home')">
-          <el-icon><ArrowLeft /></el-icon>
-          返回一级页面
-        </el-button>
-      </div>
-    </div>
+    <PageHeader
+      title="石楼动态资讯"
+      subtitle="通知下发 → 阅读 → 反馈 → 催办 闭环管理"
+      show-back
+      back-text="返回一级页面"
+    >
+    </PageHeader>
 
     <!-- ==================== 骨架屏加载 ==================== -->
     <template v-if="pageLoading">
@@ -496,10 +517,9 @@ const handleExport = () => {
                 :value="pub"
               />
             </el-select>
-            <el-button type="primary" @click="handleExport">
-              <el-icon><Download /></el-icon>
+            <SysButton type="primary" :icon="Download" @click="handleExport">
               导出Excel
-            </el-button>
+            </SysButton>
           </div>
         </div>
 
@@ -510,78 +530,54 @@ const handleExport = () => {
 
         <!-- 通知表格 -->
         <template v-else>
-          <el-table
+          <SysTable
             :data="pagedNotices"
+            :columns="noticeColumns"
             stripe
-            class="notice-table"
-            @sort-change="handleTableSort"
+            :pagination="{ layout: 'total, prev, pager, next', pageSize: pageSize }"
+            :total="totalNotices"
+            v-model:current-page="currentPage"
             :default-sort="{ prop: 'unreadCount', order: 'descending' }"
+            @sort-change="handleTableSort"
           >
-            <el-table-column prop="title" label="通知标题" min-width="220" show-overflow-tooltip />
-            <el-table-column prop="publishTime" label="发布时间" width="120" sortable="custom" />
-            <el-table-column prop="publisher" label="发布人" width="100" />
-            <el-table-column prop="targetCount" label="目标企业数" width="110" sortable="custom" align="center" />
-            <el-table-column prop="readCount" label="已读数" width="80" sortable="custom" align="center" />
-            <el-table-column prop="unreadCount" label="未读数" width="80" sortable="custom" align="center">
-              <template #default="{ row }">
-                <span :class="{ 'unread-highlight': row.unreadCount > 4 }">{{ row.unreadCount }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="readRate" label="已读率" width="100" sortable="custom" align="center">
-              <template #default="{ row }">
-                <span :style="{ color: getRateColor(row.readRate), fontWeight: 'var(--font-weight-medium)' }">
-                  {{ row.readRate }}%
+            <template #unreadCount="{ row }">
+              <span :class="{ 'unread-highlight': row.unreadCount > 4 }">{{ row.unreadCount }}</span>
+            </template>
+            <template #readRate="{ row }">
+              <span :style="{ color: getRateColor(row.readRate), fontWeight: 'var(--font-weight-medium)' }">
+                {{ row.readRate }}%
+              </span>
+            </template>
+            <template #needFeedback="{ row }">
+              <SysTag size="small" :type="row.needFeedback ? 'warning' : 'info'" variant="outline">
+                {{ row.needFeedback ? '是' : '否' }}
+              </SysTag>
+            </template>
+            <template #feedbackRate="{ row }">
+              <template v-if="row.needFeedback && row.feedbackRate !== null">
+                <span :style="{ color: getRateColor(row.feedbackRate), fontWeight: 'var(--font-weight-medium)' }">
+                  {{ row.feedbackRate }}%
                 </span>
               </template>
-            </el-table-column>
-            <el-table-column prop="needFeedback" label="是否需反馈" width="110" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.needFeedback ? 'warning' : 'info'" size="small" effect="plain">
-                  {{ row.needFeedback ? '是' : '否' }}
-                </el-tag>
+              <template v-else>
+                <span class="text-muted">-</span>
               </template>
-            </el-table-column>
-            <el-table-column prop="feedbackRate" label="反馈完成率" width="110" align="center">
-              <template #default="{ row }">
-                <template v-if="row.needFeedback && row.feedbackRate !== null">
-                  <span :style="{ color: getRateColor(row.feedbackRate), fontWeight: 'var(--font-weight-medium)' }">
-                    {{ row.feedbackRate }}%
-                  </span>
-                </template>
-                <template v-else>
-                  <span class="text-muted">-</span>
-                </template>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="160" fixed="right" align="center">
-              <template #default="{ row }">
-                <el-button type="primary" link size="small" @click="handleViewDetail(row)">
-                  详情
-                </el-button>
-                <el-button
-                  type="danger"
-                  link
-                  size="small"
-                  :disabled="row.unreadCount === 0"
-                  @click="handleUrge(row)"
-                >
-                  催办
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <!-- 分页 -->
-          <div class="pagination-bar">
-            <span class="pagination-total">共 {{ totalNotices }} 条</span>
-            <el-pagination
-              v-model:current-page="currentPage"
-              :page-size="pageSize"
-              :total="totalNotices"
-              layout="prev, pager, next"
-              background
-            />
-          </div>
+            </template>
+            <template #actions="{ row }">
+              <SysButton type="primary" variant="ghost" size="small" @click="handleViewDetail(row)">
+                详情
+              </SysButton>
+              <SysButton
+                type="danger"
+                variant="ghost"
+                size="small"
+                :disabled="row.unreadCount === 0"
+                @click="handleUrge(row)"
+              >
+                催办
+              </SysButton>
+            </template>
+          </SysTable>
         </template>
       </div>
 
@@ -774,35 +770,28 @@ const handleExport = () => {
                 <span class="chart-panel-title">企业已读率排名明细</span>
               </div>
               <div class="chart-body chart-body--table">
-                <el-table :data="enterpriseRanking" stripe size="small" class="ranking-table">
-                  <el-table-column label="排名" width="60" align="center">
-                    <template #default="{ $index }">
-                      <span
-                        class="rank-badge"
-                        :class="{
-                          'rank-badge--gold': $index === 0,
-                          'rank-badge--silver': $index === 1,
-                          'rank-badge--bronze': $index === 2,
-                        }"
-                      >{{ $index + 1 }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="name" label="企业名称" min-width="100" />
-                  <el-table-column prop="rate" label="已读率" width="80" align="center">
-                    <template #default="{ row }">
-                      <span :style="{ color: getRateColor(row.rate), fontWeight: 'var(--font-weight-medium)' }">
-                        {{ row.rate }}%
-                      </span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="趋势" width="60" align="center">
-                    <template #default="{ row }">
-                      <span :style="{ color: getTrendColor(row.trend) }">
-                        <el-icon :size="14"><component :is="getTrendIcon(row.trend)" /></el-icon>
-                      </span>
-                    </template>
-                  </el-table-column>
-                </el-table>
+                <SysTable :data="enterpriseRanking" :columns="rankingColumns" stripe :pagination="false" size="small">
+                  <template #rank="{ row, index }">
+                    <span
+                      class="rank-badge"
+                      :class="{
+                        'rank-badge--gold': index === 0,
+                        'rank-badge--silver': index === 1,
+                        'rank-badge--bronze': index === 2,
+                      }"
+                    >{{ index + 1 }}</span>
+                  </template>
+                  <template #rate="{ row }">
+                    <span :style="{ color: getRateColor(row.rate), fontWeight: 'var(--font-weight-medium)' }">
+                      {{ row.rate }}%
+                    </span>
+                  </template>
+                  <template #trend="{ row }">
+                    <span :style="{ color: getTrendColor(row.trend) }">
+                      <el-icon :size="14"><component :is="getTrendIcon(row.trend)" /></el-icon>
+                    </span>
+                  </template>
+                </SysTable>
               </div>
             </div>
           </el-col>
@@ -819,30 +808,6 @@ const handleExport = () => {
   padding: var(--spacing-lg);
   background: var(--fill-surface);
   border-radius: var(--radius-lg);
-}
-
-/* ==================== 页面标题 ==================== */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background: var(--fill-surface);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-default);
-}
-
-.page-title {
-  font-size: var(--font-size-h1);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin: 0 0 var(--spacing-4) 0;
-}
-
-.page-breadcrumb {
-  font-size: var(--font-size-small);
-  color: var(--text-muted);
 }
 
 /* ==================== 筛选栏 ==================== */

@@ -20,6 +20,21 @@ const routes = [
     name: 'NewsDetail',
     component: () => import('@/views/NewsDetail.vue'),
   },
+  {
+    path: '/risk-monitor',
+    name: 'RiskMonitor',
+    component: () => import('@/views/RiskMonitor.vue'),
+  },
+  {
+    path: '/risk-monitor/detail',
+    name: 'RiskMonitorDetail',
+    component: () => import('@/views/RiskMonitorDetail.vue'),
+  },
+  {
+    path: '/risk-monitor/detail/:id',
+    name: 'RiskMonitorItem',
+    component: () => import('@/views/RiskMonitorItem.vue'),
+  },
 ]
 
 const router = createRouter({

@@ -30,7 +30,7 @@
   --fill-page:         #E4E4E4;   /* background/main */
   --fill-surface:      #FFFFFF;   /* background/card */
   --fill-secondary:    #FBFBFB;   /* background/sub-card */
-  --fill-hover:        #939393;   /* background/card-hover */
+  --fill-hover:        #9393932e;   /* background/card-hover */
   --fill-mask:         rgba(0, 0, 0, 0.45);   /* 遮罩层 */
 
   /* ---- 文字颜色 (Text) ---- */
@@ -74,9 +74,10 @@
   --shadow-xl:        0 16px 48px rgba(0, 0, 0, 0.16);
 
   /* ---- 侧边栏 (Sidebar) ---- */
-  --sidebar-bg:             #1A3A5C;
-  --sidebar-text:           #BFCBD9;
+  --sidebar-bg:             #ffffff;
+  --sidebar-text:           var(--text-primary);
   --sidebar-active:         var(--color-primary);
+  --sidebar-hover-bg:       #ebebeb8c;
   --sidebar-width-expanded: 240px;
   --sidebar-width-collapsed: 64px;
 
@@ -153,6 +154,10 @@
   --el-color-danger:    var(--color-danger);
   --el-color-info:      var(--color-info);
   --el-border-radius-base: var(--radius-md);
+
+  /* ---- 骨架屏 (Skeleton) ---- */
+  --el-skeleton-color:    #f0f0f0;
+  --el-skeleton-to-color: #e0e0e0;
 }
 
 /* ============================================================
@@ -163,14 +168,14 @@ html.dark {
 
   /* ---- 背景色 (Background) ---- */
   --fill-page:         #002B59;   /* background/main */
-  --fill-surface:      #00336A;   /* background/card */
-  --fill-secondary:    #003670;   /* background/sub-card */
+  --fill-surface:      #003670;   /* background/card */
+  --fill-secondary:    #003b7aca;   /* background/sub-card */
   --fill-hover:        rgba(249, 250, 251, 0.08); /* background/card-hover */
   --fill-mask:         rgba(0, 0, 0, 0.6);
 
   /* ---- 文字颜色 (Text) ---- */
   --text-primary:      #FFFFFF;   /* text/primary */
-  --text-secondary:    #C5C5C5;   /* text/secondary */
+  --text-secondary:    #e4e4e4;   /* text/secondary */
   --text-muted:        #8892B0;   /* text/muted */
   --text-inverse:      #121218;
 
@@ -197,21 +202,62 @@ html.dark {
 
   /* ---- 边框颜色 (Border) ---- */
   --border-primary:   #004E7E;                 /* border/high */
-  --border-default:   #00426B;                 /* border/default */
+  --border-default:   #004774;                 /* border/default */
   --border-low:       rgba(0, 67, 109, 0.69);  /* border/low */
   --border-focus:     rgba(0, 229, 255, 0.2);  /* border/hover */
 
   /* ---- 阴影 (Shadow) ---- */
-  --shadow-accent:    rgba(0, 229, 255, 0.3);
-  --shadow-sm:        0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md:        0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg:        0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-xl:        0 16px 64px rgba(0, 0, 0, 0.7);
+  --shadow-accent:    rgba(255, 255, 255, 0.3);
+  --shadow-sm:        0 1px 3px rgba(255, 255, 255, 0.06);
+  --shadow-md:        0 4px 16px rgba(255, 255, 255, 0.08);
+  --shadow-lg:        0 8px 32px rgba(255, 255, 255, 0.12);
+  --shadow-xl:        0 16px 64px rgba(255, 255, 255, 0.16);
 
   /* ---- 侧边栏 (Sidebar) ---- */
-  --sidebar-bg:     #002142;
-  --sidebar-text:   #8892B0;
-  --sidebar-active: var(--color-primary);
+  --sidebar-bg:     #003670;
+  --sidebar-text:   #dee4f7;
+  --sidebar-hover-bg:       #c6c6c632;
+  --sidebar-active:         var(--color-primary);
+  --sidebar-width-expanded: 240px;
+  --sidebar-width-collapsed: 64px;
+
+  /* ---- Input 输入框 ---- */
+  --el-input-bg-color:              var(--fill-surface);
+  --el-input-border-color:          var(--border-default);
+  --el-input-hover-border-color:    var(--color-primary);
+  --el-input-focus-border-color:    var(--color-primary);
+  --el-input-text-color:            var(--text-primary);
+  --el-input-placeholder-color:     var(--text-muted);
+  --el-input-icon-color:            var(--text-muted);
+  --el-input-clear-hover-color:     var(--text-secondary);
+
+  /* ---- Select 下拉选择器 ---- */
+  --el-select-border-color-hover:       var(--color-primary);
+  --el-select-input-focus-border-color: var(--color-primary);
+  --el-select-input-color:              var(--text-primary);
+  --el-select-disabled-border:          var(--border-default);
+  --el-fill-color-blank:                var(--fill-surface);
+
+  /* ---- Select 下拉弹出面板 ---- */
+  --el-popper-bg-color:                 var(--fill-surface);
+  --el-popper-border-color:             var(--border-default);
+  --el-select-dropdown-bg-color:        var(--fill-surface);
+  --el-select-dropdown-border-color:    var(--border-default);
+  --el-select-dropdown-item-hover-bg-color: var(--fill-hover);
+  --el-select-dropdown-item-color:      var(--text-primary);
+  --el-select-dropdown-item-selected-color: var(--color-primary);
+
+  /* ---- Radio Button 单选框按钮组 ---- */
+  --el-radio-button-bg-color:             var(--fill-surface);
+  --el-radio-button-checked-bg-color:     var(--color-primary);
+  --el-radio-button-checked-text-color:   var(--text-inverse);
+  --el-radio-button-checked-border-color: var(--color-primary);
+  --el-radio-button-disabled-bg-color:    var(--fill-secondary);
+  --el-radio-button-text-color:           var(--text-primary);
+
+  /* ---- 骨架屏 (Skeleton) ---- */
+  --el-skeleton-color:    rgba(255, 255, 255, 0.06);
+  --el-skeleton-to-color: rgba(255, 255, 255, 0.12);
 }
 
 /* ============================================================
@@ -279,4 +325,73 @@ a:hover {
   background: var(--fill-surface);
   min-height: 100vh;
   border-radius: var(--radius-md);
+}
+
+/* ============================================================
+ * 全局表格/分页 Element Plus 令牌覆盖
+ * 确保所有 el-table / el-pagination 默认绑定设计令牌
+ * ============================================================ */
+
+/* 表格边框 */
+.el-table {
+  --el-table-border-color: var(--border-default);
+  --el-table-row-hover-bg-color: var(--fill-hover);
+  --el-table-header-bg-color: var(--fill-surface);
+  --el-table-header-text-color: var(--text-primary);
+  --el-table-text-color: var(--text-secondary);
+  --el-table-tr-bg-color: var(--fill-surface);
+  --el-fill-color-lighter: var(--fill-secondary);
+  --el-font-size-base: var(--font-size-small);
+  font-family: var(--font-family-base);
+  border-radius: var(--radius-md);
+}
+
+/* 表头全局 */
+.el-table th.el-table__cell {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-small);
+  background-color: var(--fill-surface);
+  color: var(--text-primary);
+}
+
+/* 表格体 */
+.el-table td.el-table__cell {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+/* 排序箭头 */
+.el-table .caret-wrapper .sort-caret.ascending {
+  border-bottom-color: var(--color-primary);
+}
+.el-table .caret-wrapper .sort-caret.descending {
+  border-top-color: var(--color-primary);
+}
+
+/* 分页全局 */
+.el-pagination {
+  --el-pagination-button-bg-color: var(--fill-secondary);
+  --el-pagination-hover-color: var(--color-primary);
+  --el-pagination-button-color: var(--text-primary);
+  --el-pagination-text-color: var(--text-secondary);
+  --el-pagination-border-radius: var(--radius-sm);
+  --el-pagination-font-size: var(--font-size-xs);
+  --el-color-primary: var(--color-primary);
+}
+
+.el-pagination .btn-prev,
+.el-pagination .btn-next,
+.el-pager li {
+  border-radius: var(--radius-sm) !important;
+}
+
+.el-pagination__total,
+.el-pagination__sizes .el-select .el-input__inner {
+  font-size: var(--font-size-xs) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* 表格加载遮罩 */
+.el-loading-mask {
+  background-color: var(--fill-mask);
 }

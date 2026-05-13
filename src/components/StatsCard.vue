@@ -5,6 +5,7 @@
 -->
 <script setup>
 import { computed } from 'vue'
+import SysTag from './SysTag.vue'
 
 /**
  * Props 定义
@@ -142,7 +143,7 @@ const compactRingOffset = computed(() => {
     <div class="stat-card-value" :style="{ color: textColor }">{{ value }}</div>
     <div class="stat-card-label">
       {{ label }}
-      <el-tag v-if="tag" size="small" :type="tagType" effect="plain" class="stat-card-tag">{{ tag }}</el-tag>
+      <SysTag v-if="tag" size="small" :type="tagType" variant="outline" class="stat-card-tag">{{ tag }}</SysTag>
     </div>
   </div>
 
@@ -183,7 +184,7 @@ const compactRingOffset = computed(() => {
     <div class="stat-card-value" :style="{ color: textColor }">{{ value }}</div>
     <div class="stat-card-label">
       {{ label }}
-      <el-tag v-if="tag" size="small" :type="tagType" effect="plain" class="stat-card-tag">{{ tag }}</el-tag>
+      <SysTag v-if="tag" size="small" :type="tagType" variant="outline" class="stat-card-tag">{{ tag }}</SysTag>
     </div>
   </div>
 
@@ -211,7 +212,7 @@ const compactRingOffset = computed(() => {
   <div v-else-if="type === 'compact'" class="stat-card stat-card--compact">
     <div class="compact-header">
       <span class="compact-title">{{ label }}</span>
-      <el-tag v-if="tag" size="small" :type="tagType" effect="plain" class="compact-tag">{{ tag }}</el-tag>
+      <SysTag v-if="tag" size="small" :type="tagType" variant="outline" class="compact-tag">{{ tag }}</SysTag>
     </div>
     <div class="compact-body">
       <span class="compact-value" :style="{ color: textColor }">{{ value }}</span>
@@ -241,7 +242,7 @@ const compactRingOffset = computed(() => {
 <style scoped>
 /* ==================== 卡片基础 ==================== */
 .stat-card {
-  background: var(--fill-surface);
+  background: var(--fill-secondary);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-default);
   padding: var(--spacing-lg) var(--spacing-md);
