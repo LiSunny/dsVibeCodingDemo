@@ -33,7 +33,7 @@
     empty:     空数据插槽
 -->
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 const props = defineProps({
   data: {
@@ -92,6 +92,10 @@ const props = defineProps({
     type: Number,
     default: 10,
   },
+  fit: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const emit = defineEmits([
@@ -137,6 +141,35 @@ const slotColumns = computed(() => {
   return props.columns.filter(col => col.slot).map(col => col.slot || col.prop)
 })
 
+// 处理列配置：确保至少有一列（最后一列非 fixed 列）不使用固定 width，
+// 使其自适应填充剩余空间，避免拖拽列宽后出现留白
+const processedColumns = computed(() => {
+  const cols = props.columns
+  if (!cols.length) return cols
+
+  // 找出所有未设置 fixed 的列
+  const flexibleCols = cols.filter(c => !c.fixed)
+  if (flexibleCols.length === 0) return cols
+
+  // 如果所有非 fixed 列都有固定 width，去掉最后一列的 width，让其自动填充
+  const allHaveWidth = flexibleCols.every(
+    c => c.width !== undefined && c.width !== null && c.width !== ''
+  )
+  if (!allHaveWidth) return cols
+
+  return cols.map((col, idx) => {
+    // 找到最后一个非 fixed 列的原始索引
+    const lastFlexibleIdx = cols.lastIndexOf(
+      flexibleCols[flexibleCols.length - 1]
+    )
+    if (idx === lastFlexibleIdx) {
+      const { width, ...rest } = col
+      return rest
+    }
+    return col
+  })
+})
+
 function handleCurrentChange(page) {
   innerCurrentPage.value = page
   emit('update:currentPage', page)
@@ -159,6 +192,32 @@ function handleRowClick(row, column, event) {
 
 function handleSelectionChange(selection) {
   emit('selection-change', selection)
+}
+
+// el-table 组件引用
+const tableRef = ref(null)
+
+// 拖拽列宽后消除留白：重置所有非 fixed 列的宽度 + 强制重新布局
+function handleHeaderDragEnd() {
+  nextTick(() => {
+    const store = tableRef.value?.store
+    if (!store) return
+
+    const columns = store.states.columns?.value || store.states.columns || []
+
+    // 遍历所有非 fixed 列，清空其内部记录的固定宽度
+    // 让 doLayout 重新按自适应规则计算
+    columns.forEach((col) => {
+      if (!col.fixed) {
+        col.width = undefined
+        col.realWidth = undefined
+        col.minWidth = undefined
+      }
+    })
+
+    // 触发 el-table 完整重新布局
+    tableRef.value?.doLayout()
+  })
 }
 
 // el-table 的 CSS 变量注入
@@ -189,6 +248,7 @@ const paginationVars = computed(() => ({
   <div class="sys-table-wrapper">
     <!-- 表格 -->
     <el-table
+      ref="tableRef"
       :data="data"
       :stripe="stripe"
       :border="border"
@@ -197,11 +257,13 @@ const paginationVars = computed(() => ({
       :show-header="showHeader"
       :row-key="rowKey"
       :loading="loading"
+      :fit="fit"
       :style="tableVars"
       class="sys-table"
       @sort-change="handleSortChange"
       @row-click="handleRowClick"
       @selection-change="handleSelectionChange"
+      @header-dragend="handleHeaderDragEnd"
     >
       <!-- 空数据状态 -->
       <template v-if="!$slots.empty" #empty>
@@ -215,7 +277,7 @@ const paginationVars = computed(() => ({
 
       <!-- 列定义 -->
       <el-table-column
-        v-for="col in columns"
+        v-for="col in processedColumns"
         :key="col.prop || col.label"
         :prop="col.prop"
         :label="col.label"
@@ -270,6 +332,18 @@ const paginationVars = computed(() => ({
   font-family: var(--font-family-base);
   border-radius: var(--radius-md);
 }
+
+/* 横向自适应填充 - 内部 <table> 使用 auto 布局，最后一列自动拉伸填满容器 */
+.sys-table :deep(.el-table__header),
+.sys-table :deep(.el-table__body),
+.sys-table :deep(.el-table__footer) {
+  width: 100% !important;
+}
+
+.sys-table :deep(table) {
+  table-layout: auto !important;
+}
+
 
 /* 表头样式 */
 .sys-table :deep(.el-table__header-wrapper th) {

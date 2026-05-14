@@ -266,6 +266,18 @@ const pagedNotices = computed(() => {
   return filteredNotices.value.slice(start, start + pageSize.value)
 })
 
+// 查询按钮
+const handleSearch = () => {
+  currentPage.value = 1
+}
+
+// 重置筛选
+const handleReset = () => {
+  searchKeyword.value = ''
+  publisherFilter.value = ''
+  currentPage.value = 1
+}
+
 // 搜索/筛选变更时重置到第一页
 watch([searchKeyword, publisherFilter], () => {
   currentPage.value = 1
@@ -384,13 +396,13 @@ const noticeColumns = [
   { prop: 'title', label: '通知标题', minWidth: 220, showOverflowTooltip: true },
   { prop: 'publishTime', label: '发布时间', width: 120, sortable: 'custom' },
   { prop: 'publisher', label: '发布人', width: 100 },
-  { prop: 'targetCount', label: '目标企业数', width: 110, sortable: 'custom', align: 'center' },
-  { prop: 'readCount', label: '已读数', width: 80, sortable: 'custom', align: 'center' },
-  { prop: 'unreadCount', label: '未读数', width: 80, sortable: 'custom', align: 'center', slot: 'unreadCount' },
+  { prop: 'targetCount', label: '目标企业数', width: 110, sortable: 'custom', align: 'right' },
+  { prop: 'readCount', label: '已读数', width: 80, sortable: 'custom', align: 'right' },
+  { prop: 'unreadCount', label: '未读数', width: 80, sortable: 'custom', align: 'right', slot: 'unreadCount' },
   { prop: 'readRate', label: '已读率', width: 100, sortable: 'custom', align: 'center', slot: 'readRate' },
   { prop: 'needFeedback', label: '是否需反馈', width: 110, align: 'center', slot: 'needFeedback' },
   { prop: 'feedbackRate', label: '反馈完成率', width: 110, align: 'center', slot: 'feedbackRate' },
-  { prop: 'actions', label: '操作', width: 160, align: 'center', slot: 'actions', fixed: 'right' },
+  { prop: 'actions', label: '操作', width: 120, align: 'right', slot: 'actions', fixed: 'right' },
 ]
 
 // ==================== 企业排名表列配置 ====================
@@ -427,16 +439,16 @@ const handleExport = () => {
     <template v-else>
       <!-- ==================== 3.1 综合统计看板 ==================== -->
       <div class="section">
-        <div class="section-header">
+        <div class="stats-title-row">
           <h3 class="section-title">综合统计看板</h3>
-          <div class="section-header-filter">
+          <div class="stats-title-filter">
+            <span class="stats-filter-label">数据范围：</span>
             <el-select v-model="timeRange" class="time-range-select">
               <el-option
                 v-for="opt in timeRangeOptions"
                 :key="opt.value"
                 :label="opt.label"
                 :value="opt.value"
-                
               />
             </el-select>
           </div>
@@ -479,23 +491,16 @@ const handleExport = () => {
               tag-type="warning"
             />
           </el-col>
-          <el-col class="stats-col" >
-            <StatsCard
-              type="compact"
-              :value="stats.feedbackRate + '%'"
-              label="反馈完成率"
-              :status="stats.feedbackRate >= 80 ? 'success' : stats.feedbackRate >= 60 ? 'warning' : 'danger'"
-            />
-          </el-col>
         </el-row>
       </div>
 
       <!-- ==================== 3.2 通知列表 ==================== -->
       <div class="section">
-        <div class="section-header">
-          <h3 class="section-title">通知列表</h3>
-          <div class="section-header-actions">
-            <!-- 搜索框 -->
+        <h3 class="section-title">通知列表</h3>
+
+        <!-- 筛选栏（独立于标题行） -->
+        <div class="filter-bar">
+          <div class="filter-bar-left">
             <el-input
               v-model="searchKeyword"
               placeholder="搜索通知标题"
@@ -517,7 +522,11 @@ const handleExport = () => {
                 :value="pub"
               />
             </el-select>
-            <SysButton type="primary" :icon="Download" @click="handleExport">
+            <SysButton type="primary" @click="handleSearch">查询</SysButton>
+            <SysButton type="default" variant="ghost" @click="handleReset">重置</SysButton>
+          </div>
+          <div class="filter-bar-right">
+            <SysButton type="default" :icon="Download" @click="handleExport">
               导出Excel
             </SysButton>
           </div>
@@ -534,7 +543,7 @@ const handleExport = () => {
             :data="pagedNotices"
             :columns="noticeColumns"
             stripe
-            :pagination="{ layout: 'total, prev, pager, next', pageSize: pageSize }"
+            :pagination="{ layout: 'total, sizes, prev, pager, next', pageSize: pageSize }"
             :total="totalNotices"
             v-model:current-page="currentPage"
             :default-sort="{ prop: 'unreadCount', order: 'descending' }"
@@ -560,15 +569,15 @@ const handleExport = () => {
                 </span>
               </template>
               <template v-else>
-                <span class="text-muted">-</span>
+                <span class="text-muted">—</span>
               </template>
             </template>
             <template #actions="{ row }">
-              <SysButton type="primary" variant="ghost" size="small" @click="handleViewDetail(row)">
+              <SysButton type="primary" variant="link" size="small" @click="handleViewDetail(row)">
                 详情
               </SysButton>
               <SysButton
-                type="danger"
+                type="warning"
                 variant="ghost"
                 size="small"
                 :disabled="row.unreadCount === 0"
@@ -810,9 +819,10 @@ const handleExport = () => {
   border-radius: var(--radius-lg);
 }
 
-/* ==================== 筛选栏 ==================== */
+/* ==================== 筛选栏（独立于表格标题行） ==================== */
 .filter-bar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   padding: var(--spacing-md);
   background: var(--fill-surface);
@@ -821,16 +831,22 @@ const handleExport = () => {
   margin-bottom: var(--spacing-md);
 }
 
+.filter-bar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.filter-bar-right {
+  display: flex;
+  align-items: center;
+}
+
 .filter-label {
   font-size: var(--font-size-small);
   color: var(--text-secondary);
   font-weight: var(--font-weight-medium);
-  margin-right: var(--spacing-sm);
   white-space: nowrap;
-}
-
-.filter-date-picker {
-  margin-left: var(--spacing-md);
 }
 
 /* ==================== Section 通用 ==================== */
@@ -838,26 +854,23 @@ const handleExport = () => {
   margin-bottom: var(--spacing-lg);
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-}
-
-.section-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
 .section-title {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-  margin: 0 0 var(--spacing-md) 0;
-  padding-left: var(--spacing-md);
-  border-left: 4px solid var(--color-primary);
+  margin-bottom: var(--spacing-sm);
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: var(--color-primary);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 /* ==================== 搜索 & 发布人筛选 ==================== */
@@ -870,7 +883,27 @@ const handleExport = () => {
 }
 
 /* ==================== 统计卡片区域 ==================== */
-.time-range-select{
+.stats-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+.stats-title-row .section-title {
+  margin-bottom: 0;
+}
+.stats-title-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+.stats-filter-label {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.time-range-select {
   width: 120px;
 }
 .stats-row {
@@ -882,17 +915,6 @@ const handleExport = () => {
 }
 
 /* ==================== 通知表格 ==================== */
-.notice-table {
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.notice-table :deep(.el-table__header th) {
-  background: var(--fill-secondary);
-  color: var(--text-primary);
-  font-weight: var(--font-weight-medium);
-}
-
 .unread-highlight {
   color: var(--color-danger);
   font-weight: var(--font-weight-bold);
@@ -907,20 +929,6 @@ const handleExport = () => {
   padding: var(--spacing-lg) 0;
   background: var(--fill-surface);
   border-radius: var(--radius-lg);
-}
-
-/* ==================== 分页 ==================== */
-.pagination-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md) 0;
-}
-
-.pagination-total {
-  font-size: var(--font-size-small);
-  color: var(--text-muted);
 }
 
 /* ==================== 图表面板 ==================== */
@@ -954,7 +962,7 @@ const handleExport = () => {
 .chart-legend-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
+  gap: var(--spacing-xs);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
 }
@@ -1007,7 +1015,7 @@ const handleExport = () => {
 
 /* 排名行间距 */
 .ranking-row {
-  margin-top: var(--spacing-16);
+  margin-top: var(--spacing-md);
 }
 
 /* 已读率柱状条 */
@@ -1021,7 +1029,7 @@ const handleExport = () => {
 .rate-bar-item {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-4);
+  gap: var(--spacing-xs);
 }
 
 .rate-bar-header {
@@ -1075,16 +1083,12 @@ const handleExport = () => {
 }
 
 .rank-badge--silver {
-  background: var(--border-primary);
-  color: var(--text-primary);
+  background: var(--text-muted);
+  color: var(--text-inverse);
 }
 
 .rank-badge--bronze {
   background: var(--color-warning-bg);
   color: var(--color-warning);
-}
-
-.ranking-table :deep(.el-table__header th) {
-  background: var(--fill-secondary);
 }
 </style>

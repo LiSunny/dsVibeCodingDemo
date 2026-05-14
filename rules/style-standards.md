@@ -128,9 +128,9 @@
 | CSS 变量 | Figma 变量 | 浅色模式 | 深色模式 |
 |---------|-----------|---------|---------|
 | `--fill-page` | `background/main` | `#E4E4E4` | `#002B59` |
-| `--fill-surface` | `background/card` | `#FFFFFF` | `#00336A` |
-| `--fill-secondary` | `background/sub-card` | `#FBFBFB` | `#003670` |
-| `--fill-hover` | `background/card-hover` | `#939393` | `rgba(249,250,251,0.08)` |
+| `--fill-surface` | `background/card` | `#FFFFFF` | `#003670` |
+| `--fill-secondary` | `background/sub-card` | `#FBFBFB` | `#003b7aca` |
+| `--fill-hover` | `background/card-hover` | `#9393932e` | `rgba(249,250,251,0.08)` |
 | `--fill-mask` | — | `rgba(0,0,0,0.45)` | `rgba(0,0,0,0.6)` |
 
 #### 4.1.2 文字颜色 (Text)
@@ -138,7 +138,7 @@
 | CSS 变量 | Figma 变量 | 浅色模式 | 深色模式 |
 |---------|-----------|---------|---------|
 | `--text-primary` | `text/primary` | `#101010` | `#FFFFFF` |
-| `--text-secondary` | `text/secondary` | `#2E2E2E` | `#C5C5C5` |
+| `--text-secondary` | `text/secondary` | `#2E2E2E` | `#e4e4e4` |
 | `--text-muted` | `text/muted` | `#5E5E5E` | `#8892B0` |
 | `--text-inverse` | — | `#FFFFFF` | `#121218` |
 
@@ -180,7 +180,7 @@
 | CSS 变量 | Figma 变量 | 浅色模式 | 深色模式 |
 |---------|-----------|---------|---------|
 | `--border-primary` | `border/high` | `#D3D3D3` | `#004E7E` |
-| `--border-default` | `border/default` | `#E9E9E9` | `#00426B` |
+| `--border-default` | `border/default` | `#E9E9E9` | `#004774` |
 | `--border-low` | `border/low` | `#F3F3F3` | `rgba(0,67,109,0.69)` |
 | `--border-focus` | `border/hover` | `rgba(54,120,227,0.19)` | `rgba(0,229,255,0.2)` |
 
@@ -188,11 +188,46 @@
 
 | CSS 变量 | Figma 变量 | 浅色模式 | 深色模式 |
 |---------|-----------|---------|---------|
-| `--shadow-accent` | `shadow/accent` | `rgba(54,120,227,0.15)` | `rgba(0,229,255,0.3)` |
-| `--shadow-sm` | — | `0 1px 2px rgba(0,0,0,.06)` | `0 1px 3px rgba(0,0,0,.4)` |
-| `--shadow-md` | — | `0 4px 12px rgba(0,0,0,.08)` | `0 4px 16px rgba(0,0,0,.5)` |
-| `--shadow-lg` | — | `0 8px 24px rgba(0,0,0,.12)` | `0 8px 32px rgba(0,0,0,.6)` |
-| `--shadow-xl` | — | `0 16px 48px rgba(0,0,0,.16)` | `0 16px 64px rgba(0,0,0,.7)` |
+| `--shadow-accent` | `shadow/accent` | `rgba(54,120,227,0.15)` | `rgba(255,255,255,0.3)` |
+| `--shadow-sm` | — | `0 1px 2px rgba(0,0,0,.06)` | `0 1px 3px rgba(255,255,255,0.06)` |
+| `--shadow-md` | — | `0 4px 12px rgba(0,0,0,.08)` | `0 4px 16px rgba(255,255,255,0.08)` |
+| `--shadow-lg` | — | `0 8px 24px rgba(0,0,0,.12)` | `0 8px 32px rgba(255,255,255,0.12)` |
+| `--shadow-xl` | — | `0 16px 48px rgba(0,0,0,.16)` | `0 16px 64px rgba(255,255,255,0.16)` |
+
+#### 4.1.7 侧边栏 (Sidebar)
+
+| CSS 变量 | 浅色模式 | 深色模式 |
+|---------|---------|---------|
+| `--sidebar-bg` | `#ffffff` | `#003670` |
+| `--sidebar-text` | `var(--text-primary)` | `#dee4f7` |
+| `--sidebar-active` | `var(--color-primary)` | `var(--color-primary)` |
+| `--sidebar-hover-bg` | `#ebebeb8c` | `#c6c6c632` |
+| `--sidebar-width-expanded` | `240px` | `240px` |
+| `--sidebar-width-collapsed` | `64px` | `64px` |
+
+#### 4.1.8 布局尺寸 (Layout)
+
+| CSS 变量 | 值 | 使用场景 |
+|---------|-----|---------|
+| `--header-height` | `48px` | 顶部面包屑/用户信息区高度 |
+| `--table-row-height` | `48px` | 表格行高 |
+
+#### 4.1.9 骨架屏 (Skeleton)
+
+| CSS 变量 | 浅色模式 | 深色模式 |
+|---------|---------|---------|
+| `--el-skeleton-color` | `#f0f0f0` | `rgba(255, 255, 255, 0.06)` |
+| `--el-skeleton-to-color` | `#e0e0e0` | `rgba(255, 255, 255, 0.12)` |
+
+#### 4.1.10 Element Plus 深色模式主题变量
+
+以下变量仅在深色模式下生效，覆盖 Element Plus 组件内部样式：
+
+| CSS 变量组 | 主要变量 | 使用场景 |
+|-----------|---------|---------|
+| Input 输入框 | `--el-input-bg-color`, `--el-input-border-color`, `--el-input-text-color`, `--el-input-placeholder-color` | 深色模式下输入框样式 |
+| Select 下拉选择器 | `--el-select-border-color-hover`, `--el-select-input-focus-border-color`, `--el-select-dropdown-bg-color`, `--el-select-dropdown-item-color` | 深色模式下下拉组件样式 |
+| Radio Button | `--el-radio-button-bg-color`, `--el-radio-button-checked-bg-color`, `--el-radio-button-checked-text-color` | 深色模式下单选按钮组样式 |
 
 ### 4.2 间距令牌 (Spacing)
 

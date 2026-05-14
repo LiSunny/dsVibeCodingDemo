@@ -7,6 +7,7 @@ import SysTable from '@/components/SysTable.vue'
 import SysButton from '@/components/SysButton.vue'
 import SysTag from '@/components/SysTag.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import { ElMessage } from 'element-plus' 
 
 const router = useRouter()
 const route = useRoute()
@@ -134,6 +135,18 @@ const pagedRisks = computed(() => {
 
 const clearPage = () => { currentPage.value = 1 }
 watch([timeRange, statusFilter], clearPage)
+
+// ============================================================
+// 筛选操作
+// ============================================================
+const handleSearch = () => {
+  currentPage.value = 1
+}
+
+const handleReset = () => {
+  statusFilter.value = 'all'
+  currentPage.value = 1
+}
 
 // ============================================================
 // 历史趋势数据（按周）
@@ -281,9 +294,10 @@ const getRemainType = (row) => {
     <!-- 3.1 综合统计看板 -->
     <!-- ============================================================ -->
     <div class="section">
-      <div class="section-header">
+      <div class="stats-title-row">
         <h3 class="section-title">综合统计看板</h3>
-        <div class="section-header-filter">
+        <div class="stats-title-filter">
+          <span class="stats-filter-label">数据范围：</span>
           <el-select v-model="timeRange" size="small" class="time-range-select">
             <el-option v-for="opt in timeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
@@ -325,14 +339,18 @@ const getRemainType = (row) => {
     <div class="section">
       <div class="section-header">
         <h3 class="section-title">隐患列表（{{ totalCount }} 条）</h3>
-        <div class="filter-group">
-        <span class="filter-label">状态：</span>
-        <el-select v-model="statusFilter" size="small" style="width: 120px">
-          <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-        </el-select>
       </div>
+      <div class="filter-bar">
+        <div class="filter-bar-left">
+          <span class="filter-label">状态：</span>
+          <el-select v-model="statusFilter" placeholder="全部" clearable class="filter-select">
+            <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+          <SysButton type="primary" @click="handleSearch">查询</SysButton>
+          <SysButton type="default" variant="ghost" @click="handleReset">重置</SysButton>
+        </div>
       </div>
-    
+
       <SysTable
         :data="computedTable"
         :columns="tableColumns"
@@ -387,7 +405,7 @@ const getRemainType = (row) => {
     <div class="analysis-grid">
       <!-- 新增 vs 整改完成 堆积柱状图 -->
       <div class="section-card chart-card">
-        <div class="section-header"><h2>新增隐患 vs 整改完成（按周）</h2></div>
+        <div class="chart-title-row"><h3 class="section-title">新增隐患 vs 整改完成（按周）</h3></div>
         <div class="chart-bar-group">
           <div v-for="d in trendData" :key="d.label" class="bar-col">
             <div class="bar-stack">
@@ -409,7 +427,7 @@ const getRemainType = (row) => {
 
       <!-- 整改率变化趋势 -->
       <div class="section-card chart-card">
-        <div class="section-header"><h2>整改率变化趋势</h2></div>
+        <div class="chart-title-row"><h3 class="section-title">整改率变化趋势</h3></div>
         <div class="chart-line-group">
           <div v-for="d in trendData" :key="d.label" class="line-col">
             <div class="line-track">
@@ -429,7 +447,7 @@ const getRemainType = (row) => {
     <div class="analysis-grid">
       <!-- 责任单位排名 -->
       <div class="section-card">
-        <div class="section-header"><h2>责任单位整改排名（未整改数倒序）</h2></div>
+        <div class="chart-title-row"><h3 class="section-title">责任单位整改排名（未整改数倒序）</h3></div>
         <SysTable
           :data="unitRank"
           :columns="[
@@ -444,7 +462,7 @@ const getRemainType = (row) => {
 
       <!-- 隐患类型 + 等级对比 -->
       <div class="section-card">
-        <div class="section-header"><h2>隐患类型 & 等级整改率</h2></div>
+        <div class="chart-title-row"><h3 class="section-title">隐患类型 & 等级整改率</h3></div>
         <div class="mini-dist">
           <div class="dist-row" v-for="t in typeDist" :key="t.name">
             <span class="dist-label">{{ t.name }}</span>
@@ -492,29 +510,38 @@ const getRemainType = (row) => {
   margin: 0;
 }
 
-/* ============================================================
- * 筛选器
- * ============================================================ */
+/* ==================== 筛选栏（对齐 filter-bar-standards 规范） ==================== */
 .filter-bar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--spacing-24);
-  padding: var(--spacing-12) var(--spacing-16);
+  padding: var(--spacing-md);
   background: var(--fill-surface);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-low);
+  border: 1px solid var(--border-default);
+  margin-bottom: var(--spacing-md);
 }
 
-.filter-group {
+.filter-bar-left {
   display: flex;
   align-items: center;
-  gap: var(--spacing-8);
+  gap: var(--spacing-sm);
+}
+
+.filter-bar-right {
+  display: flex;
+  align-items: center;
 }
 
 .filter-label {
   font-size: var(--font-size-small);
   color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
   white-space: nowrap;
+}
+
+.filter-select {
+  width: 140px;
 }
 
 /* ==================== 骨架屏 ==================== */
@@ -534,6 +561,30 @@ const getRemainType = (row) => {
 }
 .stats-col {
   flex: 1;
+}
+
+.stats-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.stats-title-row .section-title {
+  margin-bottom: 0;
+}
+
+.stats-title-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.stats-filter-label {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .time-range-select {
@@ -558,11 +609,8 @@ const getRemainType = (row) => {
   margin-bottom: var(--spacing-12);
 }
 
-.section-header h2 {
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-  margin: 0;
+.chart-title-row {
+  margin-bottom: var(--spacing-sm);
 }
 
 /* ============================================================
@@ -577,12 +625,22 @@ const getRemainType = (row) => {
 }
 
 .section-title {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-  margin: 0;
-  padding-left: var(--spacing-md);
-  border-left: 4px solid var(--color-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: var(--color-primary);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .text-muted {

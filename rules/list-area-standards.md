@@ -7,15 +7,18 @@
 
 ## 一、区域结构
 
-列表区域必须使用以下标准结构：
+列表区域必须使用以下标准结构（标题独立行 + 筛选栏独立行）：
 
 ```html
 <div class="section">
-  <div class="section-header">
-    <h3 class="section-title">列表标题</h3>
-    <div class="section-header-actions">
-      <!-- 搜索框 -->
-      <!-- 筛选器 -->
+  <h3 class="section-title">列表标题</h3>
+
+  <!-- 筛选栏（独立行） → 详见 rules/filter-bar-standards.md -->
+  <div class="filter-bar">
+    <div class="filter-bar-left">
+      <!-- 搜索框 / 下拉筛选 / 查询 / 重置 -->
+    </div>
+    <div class="filter-bar-right">
       <!-- 操作按钮（导出等） -->
     </div>
   </div>
@@ -46,8 +49,8 @@
 | 层级 | 元素 | 说明 |
 |------|------|------|
 | 1 | `.section` | 区域容器，提供底部间距 |
-| 2 | `.section-header` | 标题行，flex 两端对齐（标题 + 操作区） |
-| 2 | `.section-header-actions` | 操作按钮区域，flex 横向排列，gap 间距 |
+| 2 | `.section-title` | 列表标题，左侧蓝色强调条 |
+| 2 | `.filter-bar` | **筛选栏独立行**，左右分区布局，具体规范见 `filter-bar-standards.md` |
 | 2 | `.empty-state` | 空状态容器，数据为空时展示 |
 | 2 | `SysTable` | 系统表格组件，承载列表数据 |
 
@@ -89,63 +92,62 @@
 
 ## 三、搜索与筛选
 
-### 3.1 搜索框
-
-```vue
-<el-input
-  v-model="searchKeyword"
-  placeholder="搜索通知标题"
-  clearable
-  :prefix-icon="Search"
-  class="search-input"
-/>
-```
-
-```css
-.search-input {
-  width: 200px;
-}
-```
-
-### 3.2 下拉筛选器
-
-```vue
-<span class="filter-label">发布人：</span>
-<el-select
-  v-model="publisherFilter"
-  placeholder="全部"
-  clearable
-  class="publisher-select"
+> **筛选栏已独立为专项规范**，详见 **[rules/filter-bar-standards.md](./filter-bar-standards.md)**。
 >
-  <el-option
-    v-for="pub in publishers"
-    :key="pub"
-    :label="pub"
-    :value="pub"
-  />
-</el-select>
-```
+> 搜索框、下拉筛选器、查询/重置按钮、筛选栏布局、CSS 样式与 JS 逻辑均以该规范为准。
 
-```css
-.filter-label {
-  font-size: var(--font-size-small);
-  color: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
-  margin-right: var(--spacing-sm);
-  white-space: nowrap;
-}
+列表区域只保留以下与筛选联动的逻辑：
 
-.publisher-select {
-  width: 140px;
-}
-```
-
-### 3.3 搜索/筛选变更时重置页码
+### 3.1 搜索/筛选变更时重置页码
 
 ```js
-// 搜索/筛选变更时重置到第一页
-watch([searchKeyword, publisherFilter], () => {
+// 方式一：watch 自动重置
+watch([searchKeyword, filterA, filterB], () => {
   currentPage.value = 1
+})
+```
+
+```js
+// 方式二：查询按钮手动重置
+const handleSearch = () => {
+  currentPage.value = 1
+}
+
+const handleReset = () => {
+  searchKeyword.value = ''
+  filterA.value = ''
+  filterB.value = ''
+  currentPage.value = 1
+}
+```
+
+### 3.2 筛选后的数据计算
+
+```js
+const filteredData = computed(() => {
+  let list = [...rawList.value]
+  // 搜索过滤
+  if (searchKeyword.value.trim()) {
+    const kw = searchKeyword.value.trim().toLowerCase()
+    list = list.filter(item => item.title.toLowerCase().includes(kw))
+  }
+  // 下拉筛选过滤
+  if (filterA.value) {
+    list = list.filter(item => item.field === filterA.value)
+  }
+  if (filterB.value) {
+    list = list.filter(item => item.field === filterB.value)
+  }
+  // 排序
+  if (tableSort.value.prop && tableSort.value.order) {
+    const { prop, order } = tableSort.value
+    list.sort((a, b) => {
+      const valA = a[prop] ?? 0
+      const valB = b[prop] ?? 0
+      return order === 'ascending' ? valA - valB : valB - valA
+    })
+  }
+  return list
 })
 ```
 
@@ -378,38 +380,32 @@ const columns = [
 
 <template v-else>
   <div class="section">
-    <div class="section-header">
-      <h3 class="section-title">通知列表</h3>
-      <div class="section-header-actions">
+    <h3 class="section-title">列表标题</h3>
+
+    <!-- 筛选栏（独立行） → 详见 rules/filter-bar-standards.md -->
+    <div class="filter-bar">
+      <div class="filter-bar-left">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索通知标题"
+          placeholder="搜索关键词"
           clearable
           :prefix-icon="Search"
           class="search-input"
         />
-        <span class="filter-label">发布人：</span>
-        <el-select
-          v-model="publisherFilter"
-          placeholder="全部"
-          clearable
-          class="publisher-select"
-        >
-          <el-option
-            v-for="pub in publishers"
-            :key="pub"
-            :label="pub"
-            :value="pub"
-          />
+        <span class="filter-label">筛选：</span>
+        <el-select v-model="filterA" placeholder="全部" clearable class="filter-select">
+          <el-option v-for="opt in options" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
-        <SysButton type="primary" :icon="Download" @click="handleExport">
-          导出Excel
-        </SysButton>
+        <SysButton type="primary" @click="handleSearch">查询</SysButton>
+        <SysButton type="default" variant="ghost" @click="handleReset">重置</SysButton>
+      </div>
+      <div class="filter-bar-right">
+        <SysButton type="default" :icon="Download" @click="handleExport">导出Excel</SysButton>
       </div>
     </div>
 
     <div v-if="filteredData.length === 0" class="empty-state">
-      <el-empty description="暂无匹配的通知数据" />
+      <el-empty description="暂无匹配的数据" />
     </div>
 
     <template v-else>
@@ -440,6 +436,8 @@ const columns = [
 | ❌ 标题不使用 `.section-title` 样式 | 必须用 `h3.section-title` + 左侧蓝色边框 |
 | ❌ 使用 `<h2>` 或其他标签做标题 | 使用 `h3.section-title`，样式驱动外观 |
 | ❌ 使用 `.section-card` 自定义容器 | 使用标准 `.section` 类名 |
+| ❌ 把筛选栏放在标题行内 | **筛选栏必须独立为 `.filter-bar` 行**，标题行只放标题 |
+| ❌ 筛选栏不用 `.filter-bar` 样式 | 筛选栏必须遵循 `filter-bar-standards.md` 规范 |
 | ❌ 手写表格 HTML | 使用 `<SysTable>` 组件 |
 | ❌ 缺少空状态处理 | 必须提供 `<el-empty>` 空状态占位 |
 | ❌ 无骨架屏加载 | 必须提供 `<el-skeleton>` 加载过渡 |
@@ -453,3 +451,4 @@ const columns = [
 | 日期 | 变更内容 |
 |------|---------|
 | 2026-05-13 | 从 NewsCenter.vue 通知列表提取为标准规范，覆盖二级页面与一级页面两种模式 |
+| 2026-05-14 | 筛选栏独立为 `rules/filter-bar-standards.md` 专项规范，`list-area-standards.md` 标题行与筛选栏分离 |

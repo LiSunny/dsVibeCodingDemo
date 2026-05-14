@@ -12,6 +12,7 @@ import SysTable from '@/components/SysTable.vue'
 import SysButton from '@/components/SysButton.vue'
 import SysTag from '@/components/SysTag.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import vcrFire from '@/assets/vcr-fire.mp4'
 
 const router = useRouter()
 
@@ -199,9 +200,6 @@ const handleViewDetail = (row) => {
       back-text="返回一级页面"
       back-path="/home"
     >
-      <template #extra>
-        <SysTag type="info" size="small" variant="outline">数据范围：今日</SysTag>
-      </template>
     </PageHeader>
 
     <!-- ==================== 骨架屏加载 ==================== -->
@@ -292,15 +290,28 @@ const handleViewDetail = (row) => {
         <div class="video-area">
           <!-- 主视频窗口 -->
           <div class="video-main">
-            <div class="video-player-placeholder">
-              <el-icon :size="48"><VideoCamera /></el-icon>
-              <span class="video-site-name">{{ activeCamera.name }}</span>
-              <span v-if="!activeCamera.online" class="video-offline-tag">设备离线</span>
+            <!-- 在线：播放真实视频 -->
+            <template v-if="activeCamera.online">
+              <video
+                :src="vcrFire"
+                autoplay
+                muted
+                loop
+                playsinline
+                class="video-player"
+              ></video>
+              <span class="video-site-name video-site-name--overlay">{{ activeCamera.name }}</span>
               <!-- 最近预警浮动标记 -->
               <div v-if="activeCamera.lastAlertTime !== '—'" class="video-alert-tag">
                 <el-icon :size="14"><WarningFilled /></el-icon>
                 {{ activeCamera.lastAlertTime }}
               </div>
+            </template>
+            <!-- 离线：占位提示 -->
+            <div v-else class="video-player-placeholder">
+              <el-icon :size="48"><VideoCamera /></el-icon>
+              <span class="video-site-name">{{ activeCamera.name }}</span>
+              <span class="video-offline-tag">设备离线</span>
             </div>
           </div>
 
@@ -433,14 +444,23 @@ const handleViewDetail = (row) => {
 }
 
 .section-title {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin: 0 0 var(--spacing-md) 0;
-  padding-left: var(--spacing-md);
-  border-left: 4px solid var(--color-primary);
   display: flex;
   align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: var(--color-primary);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .text-muted {
@@ -534,18 +554,28 @@ const handleViewDetail = (row) => {
 /* ==================== 实时视频流 ==================== */
 .video-area {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-8);
 }
 
 .video-main {
   flex: 1;
-  min-width: 0;
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--text-primary);
 }
 
 .video-player-placeholder {
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #0a0e1a;
+  background: var(--text-primary);
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
@@ -574,8 +604,16 @@ const handleViewDetail = (row) => {
 
 .video-site-name {
   font-size: var(--font-size-body);
-  color: #ffffffaa;
+  color: var(--text-inverse);
   font-weight: var(--font-weight-medium);
+}
+
+.video-site-name--overlay {
+  position: absolute;
+  bottom: var(--spacing-md);
+  left: var(--spacing-md);
+  z-index: 2;
+  text-shadow: 0 0 8px rgba(0,0,0,0.7);
 }
 
 .video-offline-tag {
@@ -639,7 +677,7 @@ const handleViewDetail = (row) => {
 .thumb-placeholder {
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #0a0e1a;
+  background: var(--text-primary);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;

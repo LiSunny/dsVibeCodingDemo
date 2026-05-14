@@ -206,6 +206,20 @@ const clearPage = () => { currentPage.value = 1 }
 watch([timeRange, statusFilter, typeFilter, siteFilter], clearPage)
 
 // ============================================================
+// 筛选操作
+// ============================================================
+const handleSearch = () => {
+  currentPage.value = 1
+}
+
+const handleReset = () => {
+  typeFilter.value = 'all'
+  siteFilter.value = 'all'
+  statusFilter.value = 'all'
+  currentPage.value = 1
+}
+
+// ============================================================
 // 历史趋势数据（按日，近7天）
 // ============================================================
 const trendData = ref([
@@ -352,9 +366,10 @@ const goBack = () => {
       <!-- 3.1 综合统计看板 -->
       <!-- ============================================================ -->
       <div class="section">
-        <div class="section-header">
+        <div class="stats-title-row">
           <h3 class="section-title">综合统计看板</h3>
-          <div class="section-header-filter">
+          <div class="stats-title-filter">
+            <span class="stats-filter-label">数据范围：</span>
             <el-select v-model="timeRange" size="small" class="time-range-select">
               <el-option v-for="opt in timeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
@@ -382,7 +397,7 @@ const goBack = () => {
           <el-col class="stats-col">
             <StatsCard type="compact" :value="aiAccuracy" label="AI识别准确率" :progress="aiAccuracyNum" />
           </el-col>
-          <el-col class="stats-col">
+          <el-col class="stats-col stats-col--wide">
             <div class="top-types-card">
               <div class="top-types-header">
                 <span class="top-types-title">高频预警Top3</span>
@@ -406,27 +421,31 @@ const goBack = () => {
       <div class="section">
         <div class="section-header">
           <h3 class="section-title">预警事件列表（{{ totalCount }} 条）</h3>
-          <div class="filter-group">
-            <span class="filter-label">类型：</span>
-            <el-select v-model="typeFilter" size="small" style="width: 120px">
-              <el-option v-for="opt in typeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-            </el-select>
-            <span class="filter-label" style="margin-left: 8px">点位：</span>
-            <el-select v-model="siteFilter" size="small" style="width: 140px">
-              <el-option v-for="opt in siteOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-            </el-select>
-            <span class="filter-label" style="margin-left: 8px">状态：</span>
-            <el-select v-model="statusFilter" size="small" style="width: 110px">
-              <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-            </el-select>
-          </div>
         </div>
+      <div class="filter-bar">
+        <div class="filter-bar-left">
+          <span class="filter-label">类型：</span>
+          <el-select v-model="typeFilter" placeholder="全部" clearable class="filter-select">
+            <el-option v-for="opt in typeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+          <span class="filter-label">点位：</span>
+          <el-select v-model="siteFilter" placeholder="全部" clearable class="filter-select">
+            <el-option v-for="opt in siteOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+          <span class="filter-label">状态：</span>
+          <el-select v-model="statusFilter" placeholder="全部" clearable class="filter-select">
+            <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+          <SysButton type="primary" @click="handleSearch">查询</SysButton>
+          <SysButton type="default" variant="ghost" @click="handleReset">重置</SysButton>
+        </div>
+      </div>
 
         <SysTable
           :data="pagedAlerts"
           :columns="tableColumns"
           stripe
-          :pagination="{ layout: 'total, prev, pager, next', pageSize: pageSize }"
+          :pagination="{ layout: 'total, sizes, prev, pager, next', pageSize: pageSize }"
           :total="totalCount"
           v-model:current-page="currentPage"
         >
@@ -597,26 +616,69 @@ const goBack = () => {
   border-radius: var(--radius-lg);
 }
 
-/* ==================== 筛选器 ==================== */
-.filter-group {
+/* ============================================================
+ * 统计看板标题行
+ * ============================================================ */
+.stats-title-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--spacing-8);
+  margin-bottom: var(--spacing-sm);
 }
 
-.filter-label {
+.stats-title-row .section-title {
+  margin-bottom: 0;
+}
+
+.stats-title-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.stats-filter-label {
   font-size: var(--font-size-small);
   color: var(--text-secondary);
   white-space: nowrap;
 }
 
-.section-header-filter {
+.time-range-select {
+  width: 120px;
+}
+
+/* ==================== 筛选栏（对齐 filter-bar-standards 规范） ==================== */
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--fill-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  margin-bottom: var(--spacing-md);
+}
+
+.filter-bar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.filter-bar-right {
   display: flex;
   align-items: center;
 }
 
-.time-range-select {
-  width: 120px;
+.filter-label {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.filter-select {
+  width: 140px;
 }
 
 /* ============================================================
@@ -630,6 +692,11 @@ const goBack = () => {
 .stats-col {
   flex: 1;
   min-width: 140px;
+}
+
+.stats-col--wide {
+  flex: 2;
+  min-width: 280px;
 }
 
 /* ============================================================
@@ -736,12 +803,23 @@ const goBack = () => {
 }
 
 .section-title {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-  margin: 0;
-  padding-left: var(--spacing-md);
-  border-left: 4px solid var(--color-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: var(--color-primary);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .text-muted {

@@ -3,10 +3,9 @@
   用途: 模块2 - 隐患舆情监测主页面，包含核心指标看板、最新未改隐患列表
 -->
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { WarningFilled, ArrowLeft } from '@element-plus/icons-vue'
 import StatsCard from '@/components/StatsCard.vue'
 import SysTable from '@/components/SysTable.vue'
 import SysButton from '@/components/SysButton.vue'
@@ -14,32 +13,6 @@ import SysTag from '@/components/SysTag.vue'
 import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
-
-// ============================================================
-// 实时时钟
-// ============================================================
-const currentTime = ref('')
-let timer = null
-
-const updateTime = () => {
-  const now = new Date()
-  currentTime.value = now.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-onMounted(() => {
-  updateTime()
-  timer = setInterval(updateTime, 1000)
-})
-
-onBeforeUnmount(() => {
-  if (timer) clearInterval(timer)
-})
 
 // ==================== 加载状态 ====================
 const pageLoading = ref(true)
@@ -102,6 +75,20 @@ const riskList = ref([
 ])
 
 // ============================================================
+// 列表增强计算属性
+// ============================================================
+const computedList = computed(() =>
+  riskList.value.map((item) => ({
+    ...item,
+    remainText: item.remainDays < 0
+      ? `超期${Math.abs(item.remainDays)}天`
+      : item.remainDays === 0
+        ? '今日到期'
+        : `剩余${item.remainDays}天`,
+  }))
+)
+
+// ============================================================
 // 列表列配置
 // ============================================================
 const columns = [
@@ -112,18 +99,6 @@ const columns = [
   { prop: 'level', label: '等级', width: 70, slot: 'level' },
   { prop: 'action', label: '操作', width: 80, slot: 'action', align: 'center' },
 ]
-
-// 列表增强计算属性
-const computedList = ref(
-  riskList.value.map((item) => ({
-    ...item,
-    remainText: item.remainDays < 0
-      ? `超期${Math.abs(item.remainDays)}天`
-      : item.remainDays === 0
-        ? '今日到期'
-        : `剩余${item.remainDays}天`,
-  }))
-)
 
 // ============================================================
 // 催办操作
@@ -144,14 +119,8 @@ const goToItem = (row) => {
 }
 
 // ============================================================
-// 整改率状态计算
+// 剩余天数类型计算
 // ============================================================
-const getFixRateStatus = (rate) => {
-  if (rate >= 90) return 'success'
-  if (rate >= 70) return 'warning'
-  return 'danger'
-}
-
 const getRemainType = (days) => {
   if (days < 0) return 'danger'
   if (days === 0) return 'warning'
@@ -252,6 +221,7 @@ const getRemainType = (days) => {
         </div>
 
         <SysTable
+          v-if="computedList.length > 0"
           :data="computedList"
           :columns="columns"
           stripe
@@ -286,6 +256,9 @@ const getRemainType = (days) => {
             </SysButton>
           </template>
         </SysTable>
+
+        <!-- 空状态 -->
+        <el-empty v-else description="暂无未整改隐患" />
       </div>
     </template>
 
@@ -323,12 +296,22 @@ const getRemainType = (days) => {
 }
 
 .section-title {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-  margin: 0 0 var(--spacing-md) 0;
-  padding-left: var(--spacing-md);
-  border-left: 4px solid var(--color-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: var(--color-primary);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 /* ==================== 统计卡片区域 ==================== */

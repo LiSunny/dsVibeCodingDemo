@@ -280,3 +280,26 @@ async function fetchUsers(page, pageSize = 20) {
 import { ElMessage } from 'element-plus' // ✅ API 需要手动导入
 // el-button、el-dialog 无需手动导入 ✅
 </script>
+```
+
+## 六-A、Element Plus 函数式 API 导入清单（必检项）
+
+> ⚠️ 这是项目中**最高发的编译错误根因**。`unplugin-auto-import` 的 `ElementPlusResolver`
+> **不会自动导入**函数式 API，忘记手动 import 将导致 Vite 编译模块失败，
+> 表现症状为：`Failed to fetch dynamically imported module`。
+
+### 需要手动 import 的 API 完整列表
+
+| API | 用途 | 导入语句 |
+|-----|------|----------|
+| `ElMessage` | 轻提示 | `import { ElMessage } from 'element-plus'` |
+| `ElMessageBox` | 消息弹框 | `import { ElMessageBox } from 'element-plus'` |
+| `ElNotification` | 通知 | `import { ElNotification } from 'element-plus'` |
+| `ElLoading` | 加载服务 | `import { ElLoading } from 'element-plus'` |
+
+### 新建 Vue 组件时必检项
+
+1. **搜索**文件中是否使用了 `ElMessage.`、`ElMessageBox.`、`ElNotification.`、`ElLoading.`
+2. 如有使用，确认 `<script setup>` 顶部已导入对应 API
+3. 编译报 `Failed to fetch dynamically imported module` 时，**首先检查**所有该模块使用的函数式 API 是否遗漏 import
+4. 参考已有正确示例：`RiskMonitor.vue`、`AiWarning.vue`、`NewsCenter.vue`

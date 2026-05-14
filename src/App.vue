@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 const router = useRouter()
 const route = useRoute()
@@ -11,7 +12,7 @@ const isCollapsed = ref(false)
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
-
+ 
 // 深色 / 浅色模式切换
 const isDark = ref(false)
 
@@ -99,7 +100,9 @@ const breadcrumb = computed(() => {
         </div>
       </header>
       <div class="main-content">
-        <router-view />
+        <el-config-provider :locale="zhCn">
+          <router-view />
+        </el-config-provider>
       </div>
     </main>
   </div>

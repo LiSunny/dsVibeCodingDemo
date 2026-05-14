@@ -99,8 +99,8 @@ function handleBack() {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
   background: var(--fill-surface);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-default);

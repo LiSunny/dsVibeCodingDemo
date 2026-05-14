@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { WarningFilled, Clock, Phone, Message, VideoCamera, PictureFilled } from '@element-plus/icons-vue'
+import { WarningFilled, Clock, Phone, Message, VideoCamera, PictureFilled, ArrowDown } from '@element-plus/icons-vue'
 import SysButton from '@/components/SysButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import { ElMessage } from 'element-plus' 
 
 const router = useRouter()
 const route = useRoute()
@@ -26,10 +27,10 @@ const itemData = ref({
   person: '张三',
   phone: '138****1234',
   remainDays: -2,
-  images: [
-    { id: 1, label: '消防通道堵塞全貌', color: '#e74c3c' },
-    { id: 2, label: '堆积纸箱近景', color: '#e67e22' },
-    { id: 3, label: '通道宽度测量', color: '#3498db' },
+    images: [
+    { id: 1, label: '消防通道堵塞全貌', colorType: 'danger' },
+    { id: 2, label: '堆积纸箱近景', colorType: 'warning' },
+    { id: 3, label: '通道宽度测量', colorType: 'info' },
   ],
   fixRecords: [
     {
@@ -103,8 +104,24 @@ const handleComplete = () => {
   ElMessage.info('标记完成：请上传整改证明材料')
 }
 
-const handleExport = () => {
+  const handleExport = () => {
   ElMessage.success('正在导出隐患档案为PDF...')
+}
+
+// 图片颜色映射
+const imageColorMap = {
+  danger: 'var(--color-danger)',
+  warning: 'var(--color-warning)',
+  info: 'var(--color-info)',
+  primary: 'var(--color-primary)',
+  success: 'var(--color-success)',
+}
+const imageColorBgMap = {
+  danger: 'var(--color-danger-bg)',
+  warning: 'var(--color-warning-bg)',
+  info: 'var(--color-info-bg)',
+  primary: 'var(--color-info-bg)',
+  success: 'var(--color-success-bg)',
 }
 </script>
 
@@ -133,7 +150,7 @@ const handleExport = () => {
     <!-- 基本信息 -->
     <!-- ============================================================ -->
     <div class="section-card">
-      <div class="section-header"><h2>基本信息</h2></div>
+      <div class="section-header"><h2 class="section-title">基本信息</h2></div>
       <div class="info-grid">
         <div class="info-item full-width">
           <span class="info-label">隐患名称</span>
@@ -173,17 +190,17 @@ const handleExport = () => {
             v-for="img in itemData.images"
             :key="img.id"
             class="image-card"
-            :style="{ borderColor: img.color }"
+            :style="{ borderColor: `var(--color-${img.colorType})` }"
           >
-            <div class="image-placeholder" :style="{ background: img.color + '22' }">
-              <el-icon :size="32" :style="{ color: img.color }"><PictureFilled /></el-icon>
+            <div class="image-placeholder" :style="{ background: `var(--color-${img.colorType}-bg)` }">
+              <el-icon :size="32" :style="{ color: `var(--color-${img.colorType})` }"><PictureFilled /></el-icon>
               <span>照片 {{ img.id }}</span>
             </div>
             <span class="image-label">{{ img.label }}</span>
           </div>
           <div class="image-card video-card">
-            <div class="image-placeholder video" style="background: #9b59b622">
-              <el-icon :size="32" :style="{ color: '#9b59b6' }"><VideoCamera /></el-icon>
+            <div class="image-placeholder video" style="background: var(--color-primary-bg)">
+              <el-icon :size="32" style="color: var(--color-primary)"><VideoCamera /></el-icon>
               <span>现场视频</span>
             </div>
             <span class="image-label">通道现状视频</span>
@@ -196,7 +213,7 @@ const handleExport = () => {
     <!-- 整改信息 -->
     <!-- ============================================================ -->
     <div class="section-card">
-      <div class="section-header"><h2>整改信息</h2></div>
+      <div class="section-header"><h2 class="section-title">整改信息</h2></div>
       <div class="info-grid">
         <div class="info-item full-width">
           <span class="info-label">整改要求</span>
@@ -235,7 +252,7 @@ const handleExport = () => {
     <!-- 整改进度 -->
     <!-- ============================================================ -->
     <div class="section-card">
-      <div class="section-header"><h2>整改进度</h2></div>
+      <div class="section-header"><h2 class="section-title">整改进度</h2></div>
       <div class="timeline">
         <div
           v-for="(record, idx) in itemData.fixRecords"
@@ -267,7 +284,7 @@ const handleExport = () => {
     <!-- ============================================================ -->
     <div class="section-card">
       <div class="section-header">
-        <h2>
+        <h2 class="section-title">
           <el-icon :size="18"><Clock /></el-icon>
           超期记录 & 催办历史
         </h2>
@@ -299,23 +316,31 @@ const handleExport = () => {
     <!-- 操作按钮区 -->
     <!-- ============================================================ -->
     <div class="action-bar">
-      <SysButton type="primary" @click="handleUrge">
-        一键催办
-      </SysButton>
-      <SysButton type="warning" @click="handleReassign">
+      <SysButton type="default" variant="outline" @click="handleReassign">
         重新派发
       </SysButton>
-      <SysButton type="warning" variant="outline" @click="handleExtend">
+      <SysButton type="default" variant="outline" @click="handleExtend">
         延期申请
-      </SysButton>
-      <SysButton type="danger" @click="handleEscalate">
-        强制督办
-      </SysButton>
-      <SysButton type="success" @click="handleComplete">
-        标记完成
       </SysButton>
       <SysButton type="default" variant="outline" @click="handleExport">
         导出档案
+      </SysButton>
+      <el-dropdown trigger="click">
+        <SysButton type="default" variant="outline">
+          更多操作
+          <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+        </SysButton>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item @click="handleEscalate">
+              <span class="dropdown-item--danger">强制督办</span>
+            </el-dropdown-item>
+            <el-dropdown-item @click="handleComplete">标记完成</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <SysButton type="primary" @click="handleUrge">
+        一键催办
       </SysButton>
     </div>
   </div>
@@ -327,6 +352,7 @@ export default {
   components: { UserFilled },
 }
 </script>
+
 
 <style scoped>
 .page-content {
@@ -362,17 +388,26 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-12);
 }
 
-.section-header h2 {
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-  margin: 0;
+.section-header .section-title {
   display: flex;
   align-items: center;
-  gap: var(--spacing-6);
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.section-header .section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: var(--color-primary);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .overdue-summary {
@@ -466,7 +501,7 @@ export default {
 
 .image-placeholder {
   width: 140px;
-  height: 100px;
+  height: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;

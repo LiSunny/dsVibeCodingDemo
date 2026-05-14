@@ -81,6 +81,10 @@
   --sidebar-width-expanded: 240px;
   --sidebar-width-collapsed: 64px;
 
+  /* ---- 布局尺寸 (Layout) ---- */
+  --header-height:    48px;
+  --table-row-height: 48px;
+
   /* ============================================================
    * 间距令牌 (Spacing)
    * ============================================================ */
@@ -220,6 +224,10 @@ html.dark {
   --sidebar-active:         var(--color-primary);
   --sidebar-width-expanded: 240px;
   --sidebar-width-collapsed: 64px;
+
+  /* ---- 布局尺寸 (Layout) ---- */
+  --header-height:    48px;
+  --table-row-height: 48px;
 
   /* ---- Input 输入框 ---- */
   --el-input-bg-color:              var(--fill-surface);
