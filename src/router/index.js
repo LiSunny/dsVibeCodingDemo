@@ -50,6 +50,21 @@ const routes = [
     name: 'AiWarningItem',
     component: () => import('@/views/AiWarningItem.vue'),
   },
+  {
+    path: '/personnel-supervision',
+    name: 'PersonnelSupervision',
+    component: () => import('@/views/PersonnelSupervision.vue'),
+  },
+  {
+    path: '/personnel-supervision/detail',
+    name: 'PersonnelSupervisionDetail',
+    component: () => import('@/views/PersonnelSupervisionDetail.vue'),
+  },
+  {
+    path: '/personnel-supervision/detail/:id',
+    name: 'PersonnelSupervisionItem',
+    component: () => import('@/views/PersonnelSupervisionItem.vue'),
+  },
 ]
 
 const router = createRouter({
