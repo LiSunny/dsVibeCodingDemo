@@ -5,6 +5,8 @@ import {
   Cloudy, AlarmClock, List, ChatDotSquare, Aim, Box, OfficeBuilding,
   Van, Connection
 } from '@element-plus/icons-vue'
+import SysTag from '@/components/SysTag.vue'
+import MiniRingChart from '@/components/MiniRingChart.vue'
 
 // ============================================================
 // 实时时钟
@@ -232,22 +234,6 @@ const modules = ref([
 ])
 
 // ============================================================
-// 环形进度条计算
-// ============================================================
-const ringCircumference = 2 * Math.PI * 18 // r=18
-
-const getRingDasharray = (val) => {
-  const dash = (val / 100) * ringCircumference
-  return `${dash} ${ringCircumference}`
-}
-
-const getRingColor = (val) => {
-  if (val >= 90) return 'var(--color-success)'
-  if (val >= 70) return 'var(--color-warning)'
-  return 'var(--color-danger)'
-}
-
-// ============================================================
 // 数字指标语义色映射
 // ============================================================
 const getNumColorVar = (colorKey) => {
@@ -288,8 +274,8 @@ const overviewStats = computed(() => {
     <!-- ============================================================ -->
     <div class="dashboard-header">
       <div class="header-left">
-        <h1>石楼镇智慧治理平台</h1>
-        <span class="header-subtitle">16个板块 · 核心数据概览 Dashboard</span>
+        <h1>核心数据概览</h1>
+        <span class="header-subtitle">16个板块 · 100+ 数据项</span>
       </div>
       <div class="header-center">
         <div class="header-summary">
@@ -311,7 +297,7 @@ const overviewStats = computed(() => {
       </div>
       <div class="header-right">
         <span class="time-display">{{ currentTime }}</span>
-        <el-tag type="success" size="large" effect="dark">系统运行中</el-tag>
+          <SysTag type="success">系统运行中</SysTag>
       </div>
     </div>
 
@@ -335,9 +321,9 @@ const overviewStats = computed(() => {
               <span class="card-subtitle">{{ mod.subtitle }}</span>
             </div>
           </div>
-          <el-tag size="small" type="info" effect="plain" class="card-badge">
+          <SysTag type="info" variant="outline" size="small" class="card-badge">
             {{ String(mod.id).padStart(2, '0') }}
-          </el-tag>
+          </SysTag>
         </div>
 
         <!-- 指标区 -->
@@ -345,28 +331,10 @@ const overviewStats = computed(() => {
           <template v-for="(metric, idx) in mod.metrics" :key="idx">
             <!-- 环形进度条类型 -->
             <div v-if="metric.type === 'ring'" class="metric-item metric-ring">
-              <div class="ring-wrapper">
-                <svg class="ring-svg" viewBox="0 0 44 44" width="44" height="44">
-                  <circle
-                    class="ring-bg"
-                    cx="22" cy="22" r="18"
-                    fill="none"
-                    stroke="var(--border-default)"
-                    stroke-width="4"
-                  />
-                  <circle
-                    class="ring-fill"
-                    cx="22" cy="22" r="18"
-                    fill="none"
-                    :stroke="getRingColor(metric.ringVal)"
-                    stroke-width="4"
-                    stroke-linecap="round"
-                    :stroke-dasharray="getRingDasharray(metric.ringVal)"
-                    transform="rotate(-90 22 22)"
-                  />
-                </svg>
-                <span class="ring-value">{{ metric.value }}</span>
-              </div>
+              <MiniRingChart
+                :value="metric.value"
+                :percent="metric.ringVal"
+              />
               <span class="metric-label">{{ metric.label }}</span>
             </div>
 
@@ -374,15 +342,14 @@ const overviewStats = computed(() => {
             <div v-else class="metric-item metric-num">
               <span class="num-value" :style="{ color: getNumColorVar(metric.color) }">
                 {{ metric.value }}
-                <el-tag
+                <SysTag
                   v-if="metric.tag"
                   :type="getTagType(metric.color)"
                   size="small"
-                  effect="dark"
                   class="num-tag"
                 >
                   {{ metric.tag }}
-                </el-tag>
+                </SysTag>
               </span>
               <span class="metric-label">{{ metric.label }}</span>
             </div>
@@ -457,7 +424,7 @@ const overviewStats = computed(() => {
 .summary-num {
   font-size: var(--font-size-h2);
   font-weight: var(--font-weight-bold);
-  color: var(--text-inverse);
+  color: var(--text-primary);
 }
 
 .summary-num.danger {
@@ -630,46 +597,12 @@ const overviewStats = computed(() => {
   line-height: 1.2;
 }
 
-.num-tag {
-  font-size: var(--font-size-xs);
-}
 
 .metric-label {
   font-size: var(--font-size-small);
   color: var(--text-muted);
   white-space: nowrap;
   text-align: center;
-}
-
-/* 环形进度条 */
-.ring-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ring-svg {
-  display: block;
-}
-
-.ring-bg {
-  opacity: 0.15;
-}
-
-.ring-fill {
-  transition: stroke-dasharray 0.8s ease, stroke 0.8s ease;
-}
-
-.ring-value {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  line-height: 1;
 }
 
 /* ---- 底部链接 ---- */
