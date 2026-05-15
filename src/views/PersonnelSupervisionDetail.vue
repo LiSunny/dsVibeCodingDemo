@@ -12,6 +12,8 @@ import SysTable from '@/components/SysTable.vue'
 import SysButton from '@/components/SysButton.vue'
 import SysTag from '@/components/SysTag.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import SysLineChart from '@/components/SysLineChart.vue'
+import SysBarChart from '@/components/SysBarChart.vue'
 
 const router = useRouter()
 
@@ -309,6 +311,45 @@ const handleUrge = (row) => {
 const goBack = () => {
   router.push('/personnel-supervision')
 }
+
+// ============================================================
+// 历史趋势分析 - 图表数据转换（符合 SysLineChart/SysBarChart 规范格式）
+// ============================================================
+
+// 堆积柱状图数据：应访人数 & 实际走访 & 漏访
+const stackedBarData = computed(() => {
+  const result = []
+  trendData.value.forEach(d => {
+    result.push({ day: d.label, type: '应访人数', value: d.shouldVisit })
+    result.push({ day: d.label, type: '实际走访', value: d.actualVisit })
+    result.push({ day: d.label, type: '漏访', value: d.missed })
+  })
+  return result
+})
+
+// 折线图数据：走访完成率趋势
+const completionLineData = computed(() => {
+  return trendData.value.map(d => ({
+    day: d.label,
+    rate: d.completionRate || 0,
+  }))
+})
+
+// 柱状图数据：各类人员走访完成率
+const typeRateBarData = computed(() => {
+  return typeCompletionData.value.map(item => ({
+    name: item.type,
+    rate: item.rate,
+  }))
+})
+
+// 水平柱状图数据：各村/社区走访完成率
+const communityBarData = computed(() => {
+  return communityRankData.value.map(item => ({
+    name: item.community,
+    rate: item.rate,
+  }))
+})
 </script>
 
 <template>
@@ -493,90 +534,145 @@ const goBack = () => {
       </div>
 
       <!-- ============================================================ -->
-      <!-- 3.4 历史趋势与效率分析 -->
+      <!-- 3.4 历史趋势分析 -->
       <!-- ============================================================ -->
-      <div class="analysis-grid">
-        <!-- 每日应访 vs 实际走访 vs 漏访 -->
-        <div class="section-card chart-card">
-          <div class="section-header"><h2>每日应访 vs 实际走访 vs 漏访（近7天）</h2></div>
-          <div class="chart-bar-group">
-            <div v-for="d in trendData" :key="d.label" class="bar-col">
-              <div class="bar-stack-wrap">
-                <div class="bar-stack">
-                  <div class="bar-should" :style="{ height: (d.shouldVisit / maxTrendVal * 100) + '%' }">
-                    <span class="bar-val">{{ d.shouldVisit }}</span>
-                  </div>
-                </div>
-                <div class="bar-actual-wrap">
-                  <div class="bar-actual" :style="{ height: (d.actualVisit / maxTrendVal * 100) + '%' }">
-                    <span class="bar-val">{{ d.actualVisit }}</span>
-                  </div>
-                </div>
-                <div class="bar-missed-wrap" v-if="d.missed > 0">
-                  <div class="bar-missed" :style="{ height: (d.missed / maxTrendVal * 100) + '%' }">
-                    <span class="bar-val-small">{{ d.missed }}</span>
-                  </div>
+      <div class="section">
+        <h3 class="section-title">历史趋势分析</h3>
+
+        <el-row :gutter="16">
+          <!-- 每日应访 vs 实际走访 vs 漏访 -->
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">每日应访 vs 实际走访 vs 漏访（近7天）</span>
+                <div class="chart-legend">
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--primary"></span>
+                    应访人数
+                  </span>
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--success"></span>
+                    实际走访
+                  </span>
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--danger"></span>
+                    漏访
+                  </span>
                 </div>
               </div>
-              <span class="bar-label">{{ d.label }}</span>
-            </div>
-          </div>
-          <div class="chart-legend">
-            <span class="legend-item"><span class="legend-dot should"></span>应访人数</span>
-            <span class="legend-item"><span class="legend-dot actual"></span>实际走访</span>
-            <span class="legend-item"><span class="legend-dot missed"></span>漏访</span>
-          </div>
-        </div>
-
-        <!-- 走访完成率趋势 -->
-        <div class="section-card chart-card">
-          <div class="section-header"><h2>走访完成率趋势</h2></div>
-          <div class="chart-line-group">
-            <div v-for="d in trendData" :key="d.label" class="line-col">
-              <div class="line-track">
-                <div
-                  class="line-fill-rate"
-                  :style="{
-                    height: (d.completionRate || 0) + '%',
-                    background: (d.completionRate || 0) >= 95 ? 'var(--color-success)' : (d.completionRate || 0) >= 80 ? 'var(--color-warning)' : 'var(--color-danger)'
-                  }"
-                ></div>
+              <div class="chart-body">
+                <SysBarChart
+                  :data="stackedBarData"
+                  x-field="day"
+                  y-field="value"
+                  series-field="type"
+                  :is-stack="true"
+                  :colors="['#3678E3', '#059669', '#DC2626']"
+                  :height="260"
+                  :legend="false"
+                />
               </div>
-              <span class="line-pct">{{ d.completionRate ? d.completionRate + '%' : '—' }}</span>
-              <span class="bar-label">{{ d.label }}</span>
             </div>
-          </div>
-        </div>
-      </div>
+          </el-col>
 
-      <!-- 各村/社区走访完成率排名 -->
-      <div class="section-card">
-        <div class="section-header"><h2 class="section-title-text">各村/社区走访完成率排名</h2></div>
-        <SysTable
-          :data="communityRankData"
-          :columns="[
-            { prop: 'rank', label: '排名', width: 60, slot: 'rank' },
-            { prop: 'community', label: '村/社区', minWidth: 100 },
-            { prop: 'shouldVisit', label: '应访总人次', width: 100 },
-            { prop: 'actualVisit', label: '实际走访人次', width: 120 },
-            { prop: 'rate', label: '完成率', width: 100, slot: 'rate' },
-            { prop: 'missed', label: '漏访人次', width: 100 },
-          ]"
-          :pagination="false"
-          :bordered="true"
-        >
-          <template #rank="{ row }">
-            <span class="rank-badge" :style="{ color: getRankColor(row.rank) }">#{{ row.rank }}</span>
-          </template>
-          <template #rate="{ row }">
-            <SysTag
-              :type="row.rate >= 95 ? 'success' : row.rate >= 80 ? 'warning' : 'danger'"
-              size="small"
-            >
-              {{ row.rate }}%
-            </SysTag>
-          </template>
-        </SysTable>
+          <!-- 走访完成率趋势 -->
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">走访完成率趋势</span>
+              </div>
+              <div class="chart-body">
+                <SysLineChart
+                  :data="completionLineData"
+                  x-field="day"
+                  y-field="rate"
+                  :smooth="true"
+                  :point="true"
+                  :colors="['#3678E3']"
+                  :height="260"
+                  :legend="false"
+                />
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+
+        <!-- 各类人员走访完成率 + 各村/社区完成率 -->
+        <el-row :gutter="16" style="margin-top: var(--spacing-md)">
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">各类人员走访完成率</span>
+              </div>
+              <div class="chart-body">
+                <SysBarChart
+                  :data="typeRateBarData"
+                  x-field="name"
+                  y-field="rate"
+                  :height="260"
+                  :bar-radius="8"
+                  :label="true"
+                />
+              </div>
+            </div>
+          </el-col>
+
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">各村/社区走访完成率</span>
+              </div>
+              <div class="chart-body">
+                <SysBarChart
+                  :data="communityBarData"
+                  x-field="name"
+                  y-field="rate"
+                  :height="260"
+                  :bar-radius="8"
+                  :label="true"
+                />
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+
+        <!-- 各村/社区走访完成率排名（表格） -->
+        <el-row :gutter="16" style="margin-top: var(--spacing-md)">
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">各村/社区走访完成率排名</span>
+              </div>
+              <div class="chart-body">
+                <SysTable
+                  :data="communityRankData"
+                  :columns="[
+                    { prop: 'rank', label: '排名', width: 60, slot: 'rank' },
+                    { prop: 'community', label: '村/社区', minWidth: 100 },
+                    { prop: 'shouldVisit', label: '应访人次', width: 90 },
+                    { prop: 'actualVisit', label: '实际走访', width: 90 },
+                    { prop: 'rate', label: '完成率', width: 90, slot: 'rate' },
+                    { prop: 'missed', label: '漏访人次', width: 90 },
+                  ]"
+                  :pagination="false"
+                  size="small"
+                >
+                  <template #rank="{ row }">
+                    <span class="rank-badge" :style="{ color: getRankColor(row.rank) }">#{{ row.rank }}</span>
+                  </template>
+                  <template #rate="{ row }">
+                    <SysTag
+                      :type="row.rate >= 95 ? 'success' : row.rate >= 80 ? 'warning' : 'danger'"
+                      size="small"
+                    >
+                      {{ row.rate }}%
+                    </SysTag>
+                  </template>
+                </SysTable>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
       </div>
     </template>
   </div>
@@ -999,4 +1095,51 @@ const goBack = () => {
   align-items: center;
   gap: 0;
 }
+
+/* ============================================================
+ * 图表面板（历史趋势分析统一规范）
+ * ============================================================ */
+.chart-panel {
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+.chart-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-low);
+  background: var(--fill-secondary);
+}
+.chart-panel-title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+.chart-body {
+  padding: var(--spacing-md);
+}
+/* 图例 */
+.chart-legend {
+  display: flex;
+  gap: var(--spacing-md);
+}
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+.chart-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-round);
+}
+.chart-legend-dot--primary { background: var(--color-primary); }
+.chart-legend-dot--success { background: var(--color-success); }
+.chart-legend-dot--warning { background: var(--color-warning); }
+.chart-legend-dot--danger  { background: var(--color-danger); }
 </style>

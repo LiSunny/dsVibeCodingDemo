@@ -12,6 +12,8 @@ import SysTable from '@/components/SysTable.vue'
 import SysButton from '@/components/SysButton.vue'
 import SysTag from '@/components/SysTag.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import SysLineChart from '@/components/SysLineChart.vue'
+import SysBarChart from '@/components/SysBarChart.vue'
 
 const router = useRouter()
 
@@ -341,6 +343,36 @@ const handleProcess = (row) => {
 const goBack = () => {
   router.push('/ai-warning')
 }
+
+// ============================================================
+// 历史趋势分析 - 图表数据转换（符合 SysLineChart/SysBarChart 规范格式）
+// ============================================================
+
+// 折线图数据：每日预警总数 & 误报数
+const lineChartData = computed(() => {
+  const result = []
+  trendData.value.forEach(d => {
+    result.push({ day: d.label, type: '预警总数', value: d.total })
+    result.push({ day: d.label, type: '误报数', value: d.falseAlarm })
+  })
+  return result
+})
+
+// 折线图数据：AI识别准确率趋势
+const accuracyLineData = computed(() => {
+  return trendData.value.map(d => ({
+    day: d.label,
+    accuracy: d.accuracy,
+  }))
+})
+
+// 柱状图数据：预警类型占比
+const typeBarData = computed(() => {
+  return typeDistribution.value.map(t => ({
+    name: t.name,
+    count: t.count,
+  }))
+})
 </script>
 
 <template>
@@ -491,111 +523,142 @@ const goBack = () => {
       </div>
 
       <!-- ============================================================ -->
-      <!-- 3.4 历史趋势与效率分析 -->
+      <!-- 3.4 历史趋势分析 -->
       <!-- ============================================================ -->
-      <div class="analysis-grid">
-        <!-- 每日预警总数 vs 误报数 -->
-        <div class="section-card chart-card">
-          <div class="section-header"><h2>每日预警总数 vs 误报数（近7天）</h2></div>
-          <div class="chart-bar-group">
-            <div v-for="d in trendData" :key="d.label" class="bar-col">
-              <div class="bar-stack">
-                <div class="bar-total" :style="{ height: (d.total / maxTrendVal * 100) + '%' }">
-                  <span class="bar-val">{{ d.total }}</span>
+      <div class="section">
+        <h3 class="section-title">历史趋势分析</h3>
+
+        <el-row :gutter="16">
+          <!-- 每日预警总数 vs 误报数 -->
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">每日预警总数 vs 误报数（近7天）</span>
+                <div class="chart-legend">
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--primary"></span>
+                    预警总数
+                  </span>
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--danger"></span>
+                    误报数
+                  </span>
                 </div>
               </div>
-              <div class="bar-false-wrap">
-                <div class="bar-false-dot" v-if="d.falseAlarm > 0" :style="{ height: (d.falseAlarm / maxTrendVal * 100) + '%' }">
-                  <span class="bar-val">{{ d.falseAlarm }}</span>
-                </div>
+              <div class="chart-body">
+                <SysLineChart
+                  :data="lineChartData"
+                  x-field="day"
+                  y-field="value"
+                  series-field="type"
+                  :colors="['#3678E3', '#DC2626']"
+                  :smooth="true"
+                  :point="true"
+                  :height="260"
+                  :legend="false"
+                />
               </div>
-              <span class="bar-label">{{ d.label }}</span>
             </div>
-          </div>
-          <div class="chart-legend">
-            <span class="legend-item"><span class="legend-dot total"></span>预警总数</span>
-            <span class="legend-item"><span class="legend-dot false"></span>误报数</span>
-          </div>
-        </div>
+          </el-col>
 
-        <!-- 每日AI准确率趋势 -->
-        <div class="section-card chart-card">
-          <div class="section-header"><h2>AI识别准确率趋势</h2></div>
-          <div class="chart-line-group">
-            <div v-for="d in trendData" :key="d.label" class="line-col">
-              <div class="line-track">
-                <div class="line-fill-acc" :style="{ height: d.accuracy + '%' }"></div>
+          <!-- 每日AI准确率趋势 -->
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">AI识别准确率趋势</span>
               </div>
-              <span class="line-pct">{{ d.accuracy }}%</span>
-              <span class="bar-label">{{ d.label }}</span>
+              <div class="chart-body">
+                <SysLineChart
+                  :data="accuracyLineData"
+                  x-field="day"
+                  y-field="accuracy"
+                  :smooth="true"
+                  :point="true"
+                  :colors="['#059669']"
+                  :height="260"
+                  :legend="false"
+                />
+              </div>
             </div>
-          </div>
-        </div>
+          </el-col>
+        </el-row>
+
+        <!-- 预警类型占比 + 点位排名 -->
+        <el-row :gutter="16" style="margin-top: var(--spacing-md)">
+          <!-- 预警类型数量占比及处置完成率 -->
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">预警类型占比 & 处置完成率</span>
+              </div>
+              <div class="chart-body">
+                <SysBarChart
+                  :data="typeBarData"
+                  x-field="name"
+                  y-field="count"
+                  :height="220"
+                  :bar-radius="8"
+                  :label="true"
+                />
+              </div>
+            </div>
+          </el-col>
+
+          <!-- 点位预警数量排名 -->
+          <el-col :span="12">
+            <div class="chart-panel">
+              <div class="chart-panel-header">
+                <span class="chart-panel-title">点位预警数量排名</span>
+              </div>
+              <div class="chart-body">
+                <SysTable
+                  :data="siteRank"
+                  :columns="[
+                    { prop: 'site', label: '点位名称', minWidth: 130 },
+                    { prop: 'total', label: '预警总数', width: 80, sortable: true },
+                    { prop: 'unprocessed', label: '未处理', width: 70, slot: 'unprocessed' },
+                    { prop: 'mainTypes', label: '主要预警类型', minWidth: 160 },
+                  ]"
+                  :pagination="false"
+                  size="small"
+                >
+                  <template #unprocessed="{ row }">
+                    <SysTag v-if="row.unprocessed > 0" type="danger" size="small">{{ row.unprocessed }}</SysTag>
+                    <span v-else class="text-muted" style="font-size: var(--font-size-xs)">0</span>
+                  </template>
+                </SysTable>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
       </div>
 
-      <!-- 预警类型分析 + 点位排名 -->
-      <div class="analysis-grid">
-        <!-- 预警类型数量占比及处置完成率 -->
-        <div class="section-card">
-          <div class="section-header"><h2>预警类型占比 & 处置完成率</h2></div>
-          <div class="mini-dist">
-            <div v-for="t in typeDistribution" :key="t.name" class="dist-row">
-              <span class="dist-label">{{ t.name }}</span>
-              <div class="dist-bar-bg">
-                <div class="dist-bar-fill" :style="{ width: (t.count / maxTypeVal * 100) + '%' }"></div>
-              </div>
-              <span class="dist-num">{{ t.count }}</span>
-              <span class="dist-rate" :style="{ color: t.completionRate >= 80 ? 'var(--color-success)' : t.completionRate >= 60 ? 'var(--color-warning)' : 'var(--color-danger)' }">
-                {{ t.completionRate }}%
-              </span>
-            </div>
+      <!-- 摄像头在线率 -->
+      <div class="section">
+        <h3 class="section-title">摄像头在线率</h3>
+        <div class="chart-panel">
+          <div class="chart-body">
+            <SysTable
+              :data="cameraHealth"
+              :columns="[
+                { prop: 'site', label: '点位名称', minWidth: 160 },
+                { prop: 'online', label: '在线数/总数', width: 120, slot: 'online' },
+                { prop: 'rate', label: '在线率', width: 120, slot: 'rate' },
+              ]"
+              :pagination="false"
+              size="small"
+            >
+              <template #online="{ row }">
+                <span>{{ row.online }} / {{ row.total }}</span>
+              </template>
+              <template #rate="{ row }">
+                <SysTag :type="row.online / row.total >= 0.9 ? 'success' : row.online / row.total >= 0.7 ? 'warning' : 'danger'" size="small">
+                  {{ Math.round(row.online / row.total * 100) }}%
+                </SysTag>
+              </template>
+            </SysTable>
           </div>
         </div>
-
-        <!-- 点位预警数量排名 -->
-        <div class="section-card">
-          <div class="section-header"><h2>点位预警数量排名</h2></div>
-          <SysTable
-            :data="siteRank"
-            :columns="[
-              { prop: 'site', label: '点位名称', minWidth: 130 },
-              { prop: 'total', label: '预警总数', width: 80, sortable: true },
-              { prop: 'unprocessed', label: '未处理', width: 70, slot: 'unprocessed' },
-              { prop: 'mainTypes', label: '主要预警类型', minWidth: 160 },
-            ]"
-            :pagination="false"
-            :bordered="true"
-          >
-            <template #unprocessed="{ row }">
-              <SysTag v-if="row.unprocessed > 0" type="danger" size="small">{{ row.unprocessed }}</SysTag>
-              <span v-else class="text-muted" style="font-size: var(--font-size-xs)">0</span>
-            </template>
-          </SysTable>
-        </div>
-      </div>
-
-      <!-- 摄像头健康度 -->
-      <div class="section-card">
-        <div class="section-header"><h2>摄像头在线率</h2></div>
-        <SysTable
-          :data="cameraHealth"
-          :columns="[
-            { prop: 'site', label: '点位名称', minWidth: 160 },
-            { prop: 'online', label: '在线数/总数', width: 120, slot: 'online' },
-            { prop: 'rate', label: '在线率', width: 120, slot: 'rate' },
-          ]"
-          :pagination="false"
-          :bordered="true"
-        >
-          <template #online="{ row }">
-            <span>{{ row.online }} / {{ row.total }}</span>
-          </template>
-          <template #rate="{ row }">
-            <SysTag :type="row.online / row.total >= 0.9 ? 'success' : row.online / row.total >= 0.7 ? 'warning' : 'danger'" size="small">
-              {{ Math.round(row.online / row.total * 100) }}%
-            </SysTag>
-          </template>
-        </SysTable>
       </div>
     </template>
   </div>
@@ -1035,4 +1098,51 @@ const goBack = () => {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+ * 图表面板（历史趋势分析统一规范）
+ * ============================================================ */
+.chart-panel {
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+.chart-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-low);
+  background: var(--fill-secondary);
+}
+.chart-panel-title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+.chart-body {
+  padding: var(--spacing-md);
+}
+/* 图例 */
+.chart-legend {
+  display: flex;
+  gap: var(--spacing-md);
+}
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+.chart-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-round);
+}
+.chart-legend-dot--primary { background: var(--color-primary); }
+.chart-legend-dot--success { background: var(--color-success); }
+.chart-legend-dot--warning { background: var(--color-warning); }
+.chart-legend-dot--danger  { background: var(--color-danger); }
 </style>

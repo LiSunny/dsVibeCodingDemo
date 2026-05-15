@@ -15,6 +15,8 @@ import SysButton from '@/components/SysButton.vue'
 import SysTable from '@/components/SysTable.vue'
 import SysTag from '@/components/SysTag.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import SysLineChart from '@/components/SysLineChart.vue'
+import SysBarChart from '@/components/SysBarChart.vue'
 
 const router = useRouter()
 
@@ -312,39 +314,23 @@ const trendData = ref([
   { month: '2026-05', noticeCount: 5, avgReadRate: 78, unreadCount: 38 },
 ])
 
-const trendMonths = computed(() => trendData.value.map(d => d.month.substring(5)))
-const maxNoticeCount = computed(() => Math.max(...trendData.value.map(d => d.noticeCount)))
-const maxUnreadCount = computed(() => Math.max(...trendData.value.map(d => d.unreadCount)))
-
-// SVG 折线图配置（通知数量 + 未读企业数 双线）
-const trendChartWidth = 600
-const trendChartHeight = 280
-const trendPadding = { top: 20, right: 40, bottom: 40, left: 50 }
-const trendPlotWidth = trendChartWidth - trendPadding.left - trendPadding.right
-const trendPlotHeight = trendChartHeight - trendPadding.top - trendPadding.bottom
-
-const noticePoints = computed(() => {
-  return trendData.value.map((d, i) => {
-    const x = trendPadding.left + (i / (trendData.value.length - 1)) * trendPlotWidth
-    const y = trendPadding.top + trendPlotHeight - (d.noticeCount / (maxNoticeCount.value || 1)) * trendPlotHeight
-    return { x, y, label: d.noticeCount }
+// 折线图数据：转为多系列格式供 SysLineChart 使用
+const lineChartData = computed(() => {
+  const result = []
+  trendData.value.forEach(d => {
+    result.push({ month: d.month.substring(5) + '月', type: '通知数量', value: d.noticeCount })
+    result.push({ month: d.month.substring(5) + '月', type: '未读企业数', value: d.unreadCount })
   })
+  return result
 })
 
-const unreadPoints = computed(() => {
-  return trendData.value.map((d, i) => {
-    const x = trendPadding.left + (i / (trendData.value.length - 1)) * trendPlotWidth
-    const y = trendPadding.top + trendPlotHeight - (d.unreadCount / (maxUnreadCount.value || 1)) * trendPlotHeight
-    return { x, y, label: d.unreadCount }
-  })
-})
-
-// SVG Y轴刻度
-const noticeYAxisTicks = computed(() => {
-  const max = maxNoticeCount.value || 10
-  const step = Math.ceil(max / 4)
-  return Array.from({ length: 5 }, (_, i) => i * step).reverse()
-})
+// 水平柱状图数据：各月平均已读率
+const rateBarData = computed(() =>
+  trendData.value.map(d => ({
+    month: d.month.substring(5) + '月',
+    rate: d.avgReadRate,
+  }))
+)
 
 // 3.4.2 企业历史已读率排名
 const enterpriseRanking = ref([
@@ -356,40 +342,29 @@ const enterpriseRanking = ref([
   { name: '德力机械', shouldRead: 12, read: 5, rate: 41.7, trend: 'down' },
 ])
 
+// 柱状图数据：企业已读率排名供 SysBarChart 使用
+const rankingBarData = computed(() => {
+  return enterpriseRanking.value.map(item => ({
+    name: item.name,
+    rate: item.rate,
+  }))
+})
+
+// 分组柱状图数据：各企业应读 vs 已读次数
+const compareBarData = computed(() => {
+  const result = []
+  enterpriseRanking.value.forEach(item => {
+    result.push({ name: item.name, type: '应读次数', value: item.shouldRead })
+    result.push({ name: item.name, type: '已读次数', value: item.read })
+  })
+  return result
+})
+
 const getRateColor = (rate) => {
   if (rate >= 90) return 'var(--color-success)'
   if (rate >= 70) return 'var(--color-warning)'
   return 'var(--color-danger)'
 }
-
-const getRateBarColor = (rate) => {
-  if (rate >= 90) return 'var(--color-success)'
-  if (rate >= 70) return 'var(--color-warning)'
-  return 'var(--color-danger)'
-}
-
-// 趋势图标：使用 Element Plus 图标替代 emoji
-const getTrendIcon = (trend) => {
-  if (trend === 'up') return Top
-  if (trend === 'down') return Bottom
-  return Right
-}
-
-const getTrendColor = (trend) => {
-  if (trend === 'up') return 'var(--color-success)'
-  if (trend === 'down') return 'var(--color-danger)'
-  return 'var(--text-muted)'
-}
-
-// 企业排名柱状图配置
-const barChartWidth = 560
-const barChartHeight = 240
-const barPadding = { top: 10, right: 20, bottom: 36, left: 50 }
-const barPlotWidth = barChartWidth - barPadding.left - barPadding.right
-const barPlotHeight = barChartHeight - barPadding.top - barPadding.bottom
-
-const barWidth = computed(() => Math.min(48, (barPlotWidth / enterpriseRanking.value.length) * 0.6))
-const barGap = computed(() => barPlotWidth / enterpriseRanking.value.length)
 
 // ==================== 通知列表列配置 ====================
 const noticeColumns = [
@@ -403,14 +378,6 @@ const noticeColumns = [
   { prop: 'needFeedback', label: '是否需反馈', width: 110, align: 'center', slot: 'needFeedback' },
   { prop: 'feedbackRate', label: '反馈完成率', width: 110, align: 'center', slot: 'feedbackRate' },
   { prop: 'actions', label: '操作', width: 120, align: 'right', slot: 'actions', fixed: 'right' },
-]
-
-// ==================== 企业排名表列配置 ====================
-const rankingColumns = [
-  { prop: 'rank', label: '排名', width: 60, align: 'center', slot: 'rank' },
-  { prop: 'name', label: '企业名称', minWidth: 100 },
-  { prop: 'rate', label: '已读率', width: 80, align: 'center', slot: 'rate' },
-  { prop: 'trend', label: '趋势', width: 60, align: 'center', slot: 'trend' },
 ]
 
 // ==================== 导出 ====================
@@ -596,7 +563,7 @@ const handleExport = () => {
 
         <el-row :gutter="16">
           <!-- 折线图：通知数量 & 未读企业数变化 -->
-          <el-col :span="14">
+          <el-col :span="12">
             <div class="chart-panel">
               <div class="chart-panel-header">
                 <span class="chart-panel-title">通知发布数量 & 未读企业数变化（按月）</span>
@@ -612,195 +579,81 @@ const handleExport = () => {
                 </div>
               </div>
               <div class="chart-body">
-                <svg :width="trendChartWidth" :height="trendChartHeight" viewBox="0 0 600 280" class="trend-svg">
-                  <!-- Y轴网格线 -->
-                  <line
-                    v-for="(tick, i) in noticeYAxisTicks"
-                    :key="'grid-' + i"
-                    :x1="trendPadding.left"
-                    :y1="trendPadding.top + (trendPlotHeight / 4) * i"
-                    :x2="trendChartWidth - trendPadding.right"
-                    :y2="trendPadding.top + (trendPlotHeight / 4) * i"
-                    stroke="var(--border-low)"
-                    stroke-width="1"
-                  />
-                  <!-- Y轴刻度 -->
-                  <text
-                    v-for="(tick, i) in noticeYAxisTicks"
-                    :key="'tick-' + i"
-                    :x="trendPadding.left - 8"
-                    :y="trendPadding.top + (trendPlotHeight / 4) * i + 5"
-                    text-anchor="end"
-                    class="chart-axis-text"
-                    fill="var(--text-muted)"
-                  >{{ tick }}</text>
-                  <!-- X轴标签 -->
-                  <text
-                    v-for="(d, i) in trendData"
-                    :key="'x-' + i"
-                    :x="trendPadding.left + (i / (trendData.length - 1)) * trendPlotWidth"
-                    :y="trendChartHeight - 8"
-                    text-anchor="middle"
-                    class="chart-axis-text"
-                    fill="var(--text-muted)"
-                  >{{ d.month.substring(5) }}月</text>
-                  <!-- 通知数量折线 -->
-                  <polyline
-                    :points="noticePoints.map(p => `${p.x},${p.y}`).join(' ')"
-                    fill="none"
-                    stroke="var(--color-primary)"
-                    stroke-width="2.5"
-                    stroke-linejoin="round"
-                  />
-                  <!-- 未读企业数折线 -->
-                  <polyline
-                    :points="unreadPoints.map(p => `${p.x},${p.y}`).join(' ')"
-                    fill="none"
-                    stroke="var(--color-danger)"
-                    stroke-width="2.5"
-                    stroke-linejoin="round"
-                    stroke-dasharray="6,3"
-                  />
-                  <!-- 数据点 & 标签 -->
-                  <g v-for="(p, i) in noticePoints" :key="'np-' + i">
-                    <circle :cx="p.x" :cy="p.y" r="4" fill="var(--color-primary)" stroke="var(--fill-surface)" stroke-width="2" />
-                    <text :x="p.x" :y="p.y - 12" text-anchor="middle" class="chart-point-label" fill="var(--color-primary)">{{ p.label }}</text>
-                  </g>
-                  <g v-for="(p, i) in unreadPoints" :key="'up-' + i">
-                    <circle :cx="p.x" :cy="p.y" r="4" fill="var(--color-danger)" stroke="var(--fill-surface)" stroke-width="2" />
-                    <text :x="p.x" :y="p.y - 12" text-anchor="middle" class="chart-point-label" fill="var(--color-danger)">{{ p.label }}</text>
-                  </g>
-                </svg>
+                <SysLineChart
+                  :data="lineChartData"
+                  x-field="month"
+                  y-field="value"
+                  series-field="type"
+                  :colors="['#3678E3', '#DC2626']"
+                  :smooth="true"
+                  :point="true"
+                  :height="280"
+                  :legend="false"
+                  :y-axis-grid="true"
+                />
               </div>
             </div>
           </el-col>
 
-          <!-- 各月平均已读率 -->
-          <el-col :span="10">
+          <!-- 各月平均已读率：纵向柱状图 -->
+          <el-col :span="12">
             <div class="chart-panel">
               <div class="chart-panel-header">
                 <span class="chart-panel-title">各月平均已读率</span>
               </div>
               <div class="chart-body">
-                <div class="rate-bar-list">
-                  <div
-                    v-for="d in trendData"
-                    :key="d.month"
-                    class="rate-bar-item"
-                  >
-                    <div class="rate-bar-header">
-                      <span class="rate-bar-month">{{ d.month.substring(5) }}月</span>
-                      <span
-                        class="rate-bar-value"
-                        :style="{ color: getRateColor(d.avgReadRate) }"
-                      >{{ d.avgReadRate }}%</span>
-                    </div>
-                    <div class="rate-bar-track">
-                      <div
-                        class="rate-bar-fill"
-                        :style="{
-                          width: d.avgReadRate + '%',
-                          background: getRateBarColor(d.avgReadRate),
-                        }"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
+                <SysBarChart
+                  :data="rateBarData"
+                  x-field="month"
+                  y-field="rate"
+                  :height="220"
+                  :bar-radius="8"
+                  :label="true"
+                />
               </div>
             </div>
           </el-col>
         </el-row>
 
         <!-- 3.4.2 各企业历史已读率排名 -->
-        <el-row :gutter="16" class="ranking-row">
-          <el-col :span="14">
+        <el-row :gutter="16" class="chart-row">
+          <el-col :span="12">
             <div class="chart-panel">
               <div class="chart-panel-header">
                 <span class="chart-panel-title">各企业历史已读率排名（近30天）</span>
               </div>
               <div class="chart-body">
-                <svg :width="barChartWidth" :height="barChartHeight" viewBox="0 0 560 240" class="bar-svg">
-                  <!-- Y轴网格线 -->
-                  <line
-                    v-for="n in 5"
-                    :key="'bgrid-' + n"
-                    :x1="barPadding.left"
-                    :y1="barPadding.top + (barPlotHeight / 4) * (n - 1)"
-                    :x2="barChartWidth - barPadding.right"
-                    :y2="barPadding.top + (barPlotHeight / 4) * (n - 1)"
-                    stroke="var(--border-low)"
-                    stroke-width="1"
-                  />
-                  <!-- Y轴刻度 -->
-                  <text
-                    v-for="n in 5"
-                    :key="'btick-' + n"
-                    :x="barPadding.left - 8"
-                    :y="barPadding.top + (barPlotHeight / 4) * (n - 1) + 5"
-                    text-anchor="end"
-                    class="chart-axis-text"
-                    fill="var(--text-muted)"
-                  >{{ (100 - (n - 1) * 25) }}%</text>
-                  <!-- 柱状图 -->
-                  <g v-for="(item, i) in enterpriseRanking" :key="'bar-' + i">
-                    <rect
-                      :x="barPadding.left + barGap * i + (barGap - barWidth) / 2"
-                      :y="barPadding.top + barPlotHeight - (item.rate / 100) * barPlotHeight"
-                      :width="barWidth"
-                      :height="(item.rate / 100) * barPlotHeight"
-                      :rx="4"
-                      :fill="getRateBarColor(item.rate)"
-                      class="bar-rect"
-                    />
-                    <text
-                      :x="barPadding.left + barGap * i + barGap / 2"
-                      :y="barPadding.top + barPlotHeight - (item.rate / 100) * barPlotHeight - 8"
-                      text-anchor="middle"
-                      class="chart-point-label"
-                      :fill="getRateColor(item.rate)"
-                    >{{ item.rate }}%</text>
-                    <text
-                      :x="barPadding.left + barGap * i + barGap / 2"
-                      :y="barChartHeight - 6"
-                      text-anchor="middle"
-                      class="chart-axis-text bar-label"
-                      fill="var(--text-secondary)"
-                    >{{ item.name }}</text>
-                  </g>
-                </svg>
+                <SysBarChart
+                  :data="rankingBarData"
+                  x-field="rate"
+                  y-field="name"
+                  :is-horizontal="true"
+                  :height="240"
+                  :bar-radius="4"
+                  :label="true"
+                  label-position="right"
+                />
               </div>
             </div>
           </el-col>
 
-          <!-- 企业排名表格 -->
-          <el-col :span="10">
+          <!-- 各企业应读 vs 已读次数对比 -->
+          <el-col :span="12">
             <div class="chart-panel">
               <div class="chart-panel-header">
-                <span class="chart-panel-title">企业已读率排名明细</span>
+                <span class="chart-panel-title">各企业应读 vs 已读次数对比</span>
               </div>
-              <div class="chart-body chart-body--table">
-                <SysTable :data="enterpriseRanking" :columns="rankingColumns" stripe :pagination="false" size="small">
-                  <template #rank="{ row, index }">
-                    <span
-                      class="rank-badge"
-                      :class="{
-                        'rank-badge--gold': index === 0,
-                        'rank-badge--silver': index === 1,
-                        'rank-badge--bronze': index === 2,
-                      }"
-                    >{{ index + 1 }}</span>
-                  </template>
-                  <template #rate="{ row }">
-                    <span :style="{ color: getRateColor(row.rate), fontWeight: 'var(--font-weight-medium)' }">
-                      {{ row.rate }}%
-                    </span>
-                  </template>
-                  <template #trend="{ row }">
-                    <span :style="{ color: getTrendColor(row.trend) }">
-                      <el-icon :size="14"><component :is="getTrendIcon(row.trend)" /></el-icon>
-                    </span>
-                  </template>
-                </SysTable>
+              <div class="chart-body">
+                <SysBarChart
+                  :data="compareBarData"
+                  x-field="name"
+                  y-field="value"
+                  series-field="type"
+                  :colors="['#3678E3', '#059669']"
+                  :height="240"
+                  :bar-radius="4"
+                  :label="true"
+                />
               </div>
             </div>
           </el-col>
@@ -937,6 +790,7 @@ const handleExport = () => {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-default);
   overflow: hidden;
+  height: 100%;
 }
 
 .chart-panel-header {
@@ -983,112 +837,11 @@ const handleExport = () => {
 
 .chart-body {
   padding: var(--spacing-md);
+  height: 100%;
 }
 
-.chart-body--table {
-  padding: var(--spacing-sm);
-}
-
-.chart-axis-text {
-  font-size: var(--font-size-xs);
-}
-
-.chart-point-label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-}
-
-.trend-svg,
-.bar-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.bar-rect {
-  transition: height 0.5s ease, y 0.5s ease;
-}
-
-.bar-label {
-  font-size: var(--font-size-xs);
-}
-
-/* 排名行间距 */
-.ranking-row {
+.chart-row {
   margin-top: var(--spacing-md);
 }
 
-/* 已读率柱状条 */
-.rate-bar-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm) 0;
-}
-
-.rate-bar-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.rate-bar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.rate-bar-month {
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-secondary);
-}
-
-.rate-bar-value {
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight-bold);
-}
-
-.rate-bar-track {
-  height: 22px;
-  background: var(--fill-page);
-  border-radius: var(--radius-round);
-  overflow: hidden;
-}
-
-.rate-bar-fill {
-  height: 100%;
-  border-radius: var(--radius-round);
-  transition: width 0.6s ease;
-  min-width: 4px;
-}
-
-/* 排名 */
-.rank-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-round);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  background: var(--fill-secondary);
-  color: var(--text-secondary);
-}
-
-.rank-badge--gold {
-  background: var(--color-warning);
-  color: var(--text-inverse);
-}
-
-.rank-badge--silver {
-  background: var(--text-muted);
-  color: var(--text-inverse);
-}
-
-.rank-badge--bronze {
-  background: var(--color-warning-bg);
-  color: var(--color-warning);
-}
 </style>

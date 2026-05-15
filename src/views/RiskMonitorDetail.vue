@@ -8,6 +8,8 @@ import SysButton from '@/components/SysButton.vue'
 import SysTag from '@/components/SysTag.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { ElMessage } from 'element-plus' 
+import SysLineChart from '@/components/SysLineChart.vue'
+import SysBarChart from '@/components/SysBarChart.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -269,6 +271,34 @@ const getRemainType = (row) => {
   if (row.remainDays === 0) return 'warning'
   return 'default'
 }
+
+// ============================================================
+// 历史趋势分析 - 图表数据转换（符合 SysLineChart/SysBarChart 规范格式）
+// ============================================================
+
+// 堆积柱状图数据：新增隐患 & 整改完成
+const stackedBarData = computed(() => {
+  const result = []
+  trendData.value.forEach(d => {
+    result.push({ week: d.label, type: '新增隐患', value: d.newRisks })
+    result.push({ week: d.label, type: '整改完成', value: d.fixed })
+  })
+  return result
+})
+
+// 折线图数据：整改率趋势
+const fixRateLineData = computed(() => {
+  return trendData.value.map(d => ({
+    week: d.label,
+    rate: Math.round(d.fixed / (d.newRisks + d.fixed || 1) * 100),
+  }))
+})
+
+// 柱状图数据：隐患类型分布
+const typeBarData = computed(() => typeDist.value)
+
+// 柱状图数据：风险等级整改率
+const levelBarData = computed(() => levelCompare.value)
 </script>
 
 <template>
@@ -400,88 +430,128 @@ const getRemainType = (row) => {
     </div>
 
     <!-- ============================================================ -->
-    <!-- 3.4 历史趋势与效率分析 -->
+    <!-- 3.4 历史趋势分析 -->
     <!-- ============================================================ -->
-    <div class="analysis-grid">
-      <!-- 新增 vs 整改完成 堆积柱状图 -->
-      <div class="section-card chart-card">
-        <div class="chart-title-row"><h3 class="section-title">新增隐患 vs 整改完成（按周）</h3></div>
-        <div class="chart-bar-group">
-          <div v-for="d in trendData" :key="d.label" class="bar-col">
-            <div class="bar-stack">
-              <div class="bar-new" :style="{ height: (d.newRisks / maxTrendVal * 100) + '%' }">
-                <span class="bar-val">{{ d.newRisks }}</span>
+    <div class="section">
+      <h3 class="section-title">历史趋势分析</h3>
+
+      <el-row :gutter="16">
+        <!-- 新增隐患 vs 整改完成 -->
+        <el-col :span="12">
+          <div class="chart-panel">
+            <div class="chart-panel-header">
+              <span class="chart-panel-title">新增隐患 vs 整改完成（按周）</span>
+              <div class="chart-legend">
+                <span class="chart-legend-item">
+                  <span class="chart-legend-dot chart-legend-dot--danger"></span>
+                  新增隐患
+                </span>
+                <span class="chart-legend-item">
+                  <span class="chart-legend-dot chart-legend-dot--success"></span>
+                  整改完成
+                </span>
               </div>
-              <div class="bar-fixed" :style="{ height: (d.fixed / maxTrendVal * 100) + '%' }">
-                <span class="bar-val">{{ d.fixed }}</span>
-              </div>
             </div>
-            <span class="bar-label">{{ d.label }}</span>
+            <div class="chart-body">
+              <SysBarChart
+                :data="stackedBarData"
+                x-field="week"
+                y-field="value"
+                series-field="type"
+                :is-stack="true"
+                :colors="['#DC2626', '#059669']"
+                :height="260"
+                :legend="false"
+              />
+            </div>
           </div>
-        </div>
-        <div class="chart-legend">
-          <span class="legend-item"><span class="legend-dot new"></span>新增隐患</span>
-          <span class="legend-item"><span class="legend-dot fixed"></span>整改完成</span>
-        </div>
-      </div>
+        </el-col>
 
-      <!-- 整改率变化趋势 -->
-      <div class="section-card chart-card">
-        <div class="chart-title-row"><h3 class="section-title">整改率变化趋势</h3></div>
-        <div class="chart-line-group">
-          <div v-for="d in trendData" :key="d.label" class="line-col">
-            <div class="line-track">
-              <div
-                class="line-fill"
-                :style="{ height: (d.fixed / (d.newRisks + d.fixed || 1) * 100) + '%' }"
-              ></div>
+        <!-- 整改率变化趋势 -->
+        <el-col :span="12">
+          <div class="chart-panel">
+            <div class="chart-panel-header">
+              <span class="chart-panel-title">整改率变化趋势</span>
             </div>
-            <span class="line-pct">{{ Math.round(d.fixed / (d.newRisks + d.fixed || 1) * 100) }}%</span>
-            <span class="bar-label">{{ d.label }}</span>
+            <div class="chart-body">
+              <SysLineChart
+                :data="fixRateLineData"
+                x-field="week"
+                y-field="rate"
+                :smooth="true"
+                :point="true"
+                :colors="['#3678E3']"
+                :height="260"
+                :legend="false"
+              />
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </el-col>
+      </el-row>
 
-    <!-- 责任单位排名 + 隐患类型分析 -->
-    <div class="analysis-grid">
-      <!-- 责任单位排名 -->
-      <div class="section-card">
-        <div class="chart-title-row"><h3 class="section-title">责任单位整改排名（未整改数倒序）</h3></div>
-        <SysTable
-          :data="unitRank"
-          :columns="[
-            { prop: 'unit', label: '责任单位', minWidth: 120 },
-            { prop: 'unfix', label: '未整改数', width: 100 },
-            { prop: 'avgDays', label: '平均整改时长(天)', width: 140 },
-          ]"
-          :pagination="false"
-          :bordered="true"
-        />
-      </div>
+      <!-- 隐患类型分布 + 风险等级整改率 -->
+      <el-row :gutter="16" style="margin-top: var(--spacing-md)">
+        <el-col :span="12">
+          <div class="chart-panel">
+            <div class="chart-panel-header">
+              <span class="chart-panel-title">隐患类型分布</span>
+            </div>
+            <div class="chart-body">
+              <SysBarChart
+                :data="typeBarData"
+                x-field="name"
+                y-field="count"
+                :height="220"
+                :bar-radius="8"
+                :label="true"
+              />
+            </div>
+          </div>
+        </el-col>
 
-      <!-- 隐患类型 + 等级对比 -->
-      <div class="section-card">
-        <div class="chart-title-row"><h3 class="section-title">隐患类型 & 等级整改率</h3></div>
-        <div class="mini-dist">
-          <div class="dist-row" v-for="t in typeDist" :key="t.name">
-            <span class="dist-label">{{ t.name }}</span>
-            <div class="dist-bar-bg">
-              <div class="dist-bar-fill" :style="{ width: (t.count / (totalCount || 1) * 100) + '%' }"></div>
+        <el-col :span="12">
+          <div class="chart-panel">
+            <div class="chart-panel-header">
+              <span class="chart-panel-title">风险等级整改率</span>
             </div>
-            <span class="dist-num">{{ t.count }}</span>
-          </div>
-        </div>
-        <div class="level-compare" style="margin-top: 16px">
-          <div class="level-row" v-for="l in levelCompare" :key="l.name">
-            <span class="level-label">{{ l.name }}风险</span>
-            <div class="dist-bar-bg">
-              <div class="dist-bar-fill level" :style="{ width: l.rate + '%' }"></div>
+            <div class="chart-body">
+              <SysBarChart
+                :data="levelBarData"
+                x-field="name"
+                y-field="rate"
+                :is-horizontal="true"
+                :height="220"
+                :bar-radius="8"
+                :label="true"
+                label-position="right"
+              />
             </div>
-            <span class="dist-num">{{ l.rate }}%</span>
           </div>
-        </div>
-      </div>
+        </el-col>
+      </el-row>
+
+      <!-- 责任单位整改排名 -->
+      <el-row :gutter="16" style="margin-top: var(--spacing-md)">
+        <el-col :span="12">
+          <div class="chart-panel">
+            <div class="chart-panel-header">
+              <span class="chart-panel-title">责任单位整改排名（未整改数倒序）</span>
+            </div>
+            <div class="chart-body">
+              <SysTable
+                :data="unitRank"
+                :columns="[
+                  { prop: 'unit', label: '责任单位', minWidth: 120 },
+                  { prop: 'unfix', label: '未整改数', width: 100 },
+                  { prop: 'avgDays', label: '平均整改时长(天)', width: 140 },
+                ]"
+                :pagination="false"
+                size="small"
+              />
+            </div>
+          </div>
+        </el-col>
+      </el-row>
     </div>
     </template>
   </div>
@@ -844,4 +914,51 @@ const getRemainType = (row) => {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+ * 图表面板（历史趋势分析统一规范）
+ * ============================================================ */
+.chart-panel {
+  background: var(--fill-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+.chart-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-low);
+  background: var(--fill-secondary);
+}
+.chart-panel-title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+.chart-body {
+  padding: var(--spacing-md);
+}
+/* 图例 */
+.chart-legend {
+  display: flex;
+  gap: var(--spacing-md);
+}
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+.chart-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-round);
+}
+.chart-legend-dot--primary { background: var(--color-primary); }
+.chart-legend-dot--success { background: var(--color-success); }
+.chart-legend-dot--warning { background: var(--color-warning); }
+.chart-legend-dot--danger  { background: var(--color-danger); }
 </style>
