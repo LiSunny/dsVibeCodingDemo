@@ -56,6 +56,21 @@ const routes = [
     component: () => import('@/views/PersonnelSupervision.vue'),
   },
   {
+    path: '/owner-dashboard',
+    name: 'OwnerDashboard',
+    component: () => import('@/views/OwnerDashboard.vue'),
+  },
+  {
+    path: '/owner-dashboard/detail',
+    name: 'OwnerDashboardDetail',
+    component: () => import('@/views/OwnerDashboardDetail.vue'),
+  },
+  {
+    path: '/owner-dashboard/detail/:id',
+    name: 'OwnerDashboardItem',
+    component: () => import('@/views/OwnerDashboardItem.vue'),
+  },
+  {
     path: '/personnel-supervision/detail',
     name: 'PersonnelSupervisionDetail',
     component: () => import('@/views/PersonnelSupervisionDetail.vue'),

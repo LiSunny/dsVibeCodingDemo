@@ -44,6 +44,7 @@ const breadcrumb = computed(() => {
     'risk-monitor': '隐患舆情监测',
     'ai-warning': '安消应AI预警',
     'personnel-supervision': '重点人员联勤',
+    'owner-dashboard': '业主单位监管驾驶舱',
     detail: '专题分析',
   }
   return parts.map((p) => map[p] || p).join(' / ')
@@ -88,6 +89,10 @@ const breadcrumb = computed(() => {
           <el-menu-item index="/personnel-supervision">
             <el-icon><Icon icon="mdi:account-group" /></el-icon>
             <span>重点人员联勤</span>
+          </el-menu-item>
+          <el-menu-item index="/owner-dashboard">
+            <el-icon><Icon icon="mdi:view-dashboard" /></el-icon>
+            <span>业主单位监管驾驶舱</span>
           </el-menu-item>
         </el-menu>
       </nav>
