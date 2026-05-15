@@ -631,7 +631,6 @@ const handleExport = () => {
                   :height="240"
                   :bar-radius="4"
                   :label="true"
-                  label-position="right"
                 />
               </div>
             </div>
@@ -642,6 +641,16 @@ const handleExport = () => {
             <div class="chart-panel">
               <div class="chart-panel-header">
                 <span class="chart-panel-title">各企业应读 vs 已读次数对比</span>
+                <div class="chart-legend">
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--primary"></span>
+                    应读次数
+                  </span>
+                  <span class="chart-legend-item">
+                    <span class="chart-legend-dot chart-legend-dot--success"></span>
+                    已读次数
+                  </span>
+                </div>
               </div>
               <div class="chart-body">
                 <SysBarChart
@@ -653,6 +662,7 @@ const handleExport = () => {
                   :height="240"
                   :bar-radius="4"
                   :label="true"
+                  :legend="false"
                 />
               </div>
             </div>
@@ -829,6 +839,10 @@ const handleExport = () => {
 
 .chart-legend-dot--primary {
   background: var(--color-primary);
+}
+
+.chart-legend-dot--success {
+  background: var(--color-success);
 }
 
 .chart-legend-dot--danger {
